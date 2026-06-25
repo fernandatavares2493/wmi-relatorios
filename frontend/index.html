@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repositório de Relatórios — WMI Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg-deep:#020818;--color-bg-dark:#050A1F;--color-bg-navy:#0A1628;
+  --color-bg-mid:#0D1B3E;--color-bg-elevated:#111D40;
+  --color-blue-700:#1D4ED8;--color-blue-600:#2563EB;
+  --color-blue-500:#3B82F6;--color-blue-400:#60A5FA;--color-blue-300:#93C5FD;
+  --color-cyan-400:#22D3EE;--color-cyan-glow:#00D4FF;
+  --color-white:#FFFFFF;--color-gray-100:#F1F5F9;--color-gray-300:#CBD5E1;
+  --color-gray-400:#94A3B8;--color-gray-500:#64748B;--color-gray-600:#475569;
+  --color-gray-700:#334155;
+  --color-success:#10B981;--color-success-light:rgba(16,185,129,0.15);
+  --color-warning:#F59E0B;--color-warning-light:rgba(245,158,11,0.15);
+  --color-error:#EF4444;--color-error-light:rgba(239,68,68,0.15);
+  --gradient-brand:linear-gradient(135deg,#2563EB 0%,#06B6D4 100%);
+  --gradient-text:linear-gradient(90deg,#60A5FA 0%,#00D4FF 100%);
+  --glass-bg:rgba(255,255,255,0.04);--glass-bg-hover:rgba(255,255,255,0.07);
+  --glass-bg-active:rgba(37,99,235,0.15);
+  --glass-border:rgba(255,255,255,0.08);--glass-border-hover:rgba(96,165,250,0.3);
+  --glass-border-brand:rgba(37,99,235,0.4);--glass-blur:blur(20px);
+  --shadow-lg:0 8px 40px rgba(0,0,0,0.5);
+  --shadow-blue-sm:0 0 15px rgba(37,99,235,0.2);--shadow-blue-md:0 0 30px rgba(37,99,235,0.3);
+  --shadow-button:0 4px 20px rgba(37,99,235,0.4);--shadow-button-hover:0 8px 30px rgba(37,99,235,0.6);
+  --font-family:'Poppins',sans-serif;
+  --font-size-xs:0.625rem;--font-size-sm:0.75rem;--font-size-base:0.875rem;
+  --font-size-md:1rem;--font-size-lg:1.125rem;--font-size-xl:1.25rem;--font-size-2xl:1.5rem;
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
+  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;--radius-2xl:28px;--radius-full:9999px;
+  --transition-base:250ms ease;--transition-fast:150ms ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-family);background:var(--color-bg-deep);color:var(--color-white);
+  line-height:1.5;font-size:var(--font-size-base);overflow-x:hidden;min-height:100vh}
+.text-gradient{background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.aurora-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora-bg::before{content:'';position:absolute;width:800px;height:800px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);
+  top:-200px;left:-200px;animation:a1 20s ease-in-out infinite}
+.aurora-bg::after{content:'';position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(6,182,212,0.08) 0%,transparent 70%);
+  bottom:-100px;right:-100px;animation:a2 25s ease-in-out infinite}
+@keyframes a1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(100px,80px) scale(1.1)}66%{transform:translate(-60px,120px) scale(0.9)}}
+@keyframes a2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-80px,-60px) scale(1.15)}66%{transform:translate(60px,-100px) scale(0.95)}}
+.container{max-width:1280px;margin:0 auto;padding:0 var(--space-6);position:relative;z-index:1}
+.top-nav{position:sticky;top:0;z-index:100;background:rgba(2,8,24,0.9);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border);padding:var(--space-4) 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)}
+.nav-logo{display:flex;align-items:center;gap:var(--space-3)}
+.nav-logo-icon{width:36px;height:36px;background:var(--gradient-brand);border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+.nav-logo-name{font-size:var(--font-size-md);font-weight:700}
+.nav-logo-sub{font-size:var(--font-size-xs);color:var(--color-gray-500)}
+.nav-actions{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
+.hero{padding:var(--space-10) 0 var(--space-6)}
+.hero-tag{display:inline-flex;align-items:center;gap:var(--space-2);background:rgba(37,99,235,0.15);
+  border:1px solid rgba(37,99,235,0.3);border-radius:var(--radius-full);
+  padding:var(--space-1) var(--space-4);font-size:var(--font-size-xs);font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--color-blue-300);margin-bottom:var(--space-4)}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--color-cyan-glow);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.hero h1{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;line-height:1.2;margin-bottom:var(--space-3)}
+.hero p{font-size:var(--font-size-lg);color:var(--color-gray-400);max-width:540px;line-height:1.7}
+.stats-bar{display:flex;gap:var(--space-8);margin-top:var(--space-6);flex-wrap:wrap}
+.stat-v{font-size:var(--font-size-2xl);font-weight:800}
+.stat-l{font-size:var(--font-size-xs);color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.filters-bar{background:var(--glass-bg);backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-border);border-radius:var(--radius-xl);
+  padding:var(--space-4) var(--space-6);margin-bottom:var(--space-6);
+  display:flex;gap:var(--space-4);align-items:center;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:200px;position:relative}
+.search-wrap input{background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);
+  border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4) var(--space-3) 2.4rem;
+  font-family:var(--font-family);font-size:var(--font-size-base);color:var(--color-white);
+  width:100%;outline:none;transition:all var(--transition-base)}
+.search-wrap input::placeholder{color:var(--color-gray-600)}
+.search-wrap input:focus{border-color:var(--color-blue-500);background:rgba(37,99,235,0.07);box-shadow:0 0 0 3px rgba(37,99,235,0.15)}
+.search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--color-gray-500);pointer-events:none}
+.pills{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.pill{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-full);
+  padding:var(--space-1) var(--space-4);font-size:var(--font-size-xs);font-weight:600;
+  color:var(--color-gray-400);cursor:pointer;transition:all var(--transition-base);white-space:nowrap}
+.pill:hover{border-color:var(--glass-border-hover);color:var(--color-white)}
+.pill.active{background:rgba(37,99,235,0.2);border-color:var(--color-blue-500);color:var(--color-blue-300)}
+.reports-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-5);margin-bottom:var(--space-12)}
+.rcard{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);
+  border-radius:var(--radius-xl);overflow:hidden;transition:all var(--transition-base);cursor:pointer}
+.rcard:hover{border-color:var(--glass-border-hover);transform:translateY(-4px);box-shadow:var(--shadow-blue-md)}
+.rcard-preview{height:148px;background:var(--color-bg-mid);position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.rcard-preview img{width:100%;height:100%;object-fit:cover;opacity:.85}
+.rcard-ph{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--color-gray-600)}
+.rcard-ph-icon{font-size:2.2rem}
+.rcard-ph-label{font-size:var(--font-size-xs);text-transform:uppercase;letter-spacing:.08em}
+.rcard-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(2,8,24,.8))}
+.rcard-cat{position:absolute;top:var(--space-3);left:var(--space-3);z-index:2;
+  background:rgba(2,8,24,.8);backdrop-filter:blur(8px);border:1px solid var(--glass-border);
+  border-radius:var(--radius-full);padding:2px var(--space-3);font-size:var(--font-size-xs);font-weight:600}
+.rcard-body{padding:var(--space-4) var(--space-5)}
+.rcard-title{font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-2);line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rcard-desc{font-size:var(--font-size-sm);color:var(--color-gray-400);line-height:1.6;
+  margin-bottom:var(--space-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rcard-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);
+  padding-top:var(--space-3);border-top:1px solid var(--glass-border)}
+.rcard-meta{font-size:var(--font-size-xs);color:var(--color-gray-500)}
+.rcard-btns{display:flex;gap:var(--space-2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);
+  font-family:var(--font-family);font-weight:600;border:none;cursor:pointer;
+  transition:all var(--transition-base);text-decoration:none;white-space:nowrap;position:relative;overflow:hidden}
+.btn-xs{font-size:var(--font-size-xs);padding:var(--space-1) var(--space-3);border-radius:var(--radius-md)}
+.btn-sm{font-size:var(--font-size-xs);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md)}
+.btn-md{font-size:var(--font-size-sm);padding:var(--space-3) var(--space-6);border-radius:var(--radius-lg)}
+.btn-lg{font-size:var(--font-size-base);padding:var(--space-4) var(--space-8);border-radius:var(--radius-lg)}
+.btn-primary{background:var(--gradient-brand);color:#fff;box-shadow:var(--shadow-button)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:var(--shadow-button-hover);filter:brightness(1.1)}
+.btn-primary:disabled{opacity:.5;pointer-events:none}
+.btn-secondary{background:var(--glass-bg);color:var(--color-blue-400);border:1px solid var(--glass-border-brand);backdrop-filter:var(--glass-blur)}
+.btn-secondary:hover{background:var(--glass-bg-active);transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--color-gray-300);border:1px solid var(--glass-border)}
+.btn-ghost:hover{background:var(--glass-bg-hover);color:var(--color-white);border-color:var(--glass-border-hover)}
+.btn-danger{background:var(--color-error-light);color:#FCA5A5;border:1px solid rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.25)}
+.overlay{position:fixed;inset:0;background:rgba(2,8,24,0.88);backdrop-filter:blur(8px);
+  z-index:1000;display:flex;align-items:center;justify-content:center;padding:var(--space-6);
+  opacity:0;visibility:hidden;transition:all var(--transition-base)}
+.overlay.open{opacity:1;visibility:visible}
+.modal{background:var(--color-bg-navy);border:1px solid var(--glass-border);border-radius:var(--radius-2xl);
+  width:100%;max-height:92vh;overflow-y:auto;transform:translateY(20px) scale(.97);transition:all var(--transition-base)}
+.overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-sm{max-width:460px}.modal-md{max-width:640px}.modal-lg{max-width:860px}.modal-xl{max-width:1060px}
+.mhead{padding:var(--space-6) var(--space-8) 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5)}
+.mhead h2{font-size:var(--font-size-xl);font-weight:700}
+.mclose{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-md);
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--color-gray-400);transition:all var(--transition-fast)}
+.mclose:hover{background:var(--glass-bg-hover);color:var(--color-white)}
+.mbody{padding:0 var(--space-8) var(--space-8)}
+.fg{margin-bottom:var(--space-5)}
+.flabel{display:block;font-size:var(--font-size-sm);font-weight:500;color:var(--color-gray-300);margin-bottom:var(--space-2)}
+.flabel em{color:var(--color-error);margin-left:2px;font-style:normal}
+.finput{background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  padding:var(--space-3) var(--space-4);font-family:var(--font-family);font-size:var(--font-size-base);
+  color:var(--color-white);width:100%;outline:none;transition:all var(--transition-base)}
+.finput::placeholder{color:var(--color-gray-600)}
+.finput:focus{border-color:var(--color-blue-500);background:rgba(37,99,235,0.07);box-shadow:0 0 0 3px rgba(37,99,235,0.15)}
+textarea.finput{resize:vertical;min-height:72px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
+.sel-wrap{position:relative}
+.sel-wrap select.finput{appearance:none;cursor:pointer;padding-right:var(--space-8)}
+.sel-wrap::after{content:'▾';position:absolute;right:var(--space-4);top:50%;transform:translateY(-50%);color:var(--color-gray-500);pointer-events:none}
+.tabs{display:flex;gap:0;border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  padding:3px;background:rgba(255,255,255,0.02);margin-bottom:var(--space-6)}
+.tab{flex:1;text-align:center;padding:var(--space-2) var(--space-4);font-size:var(--font-size-sm);
+  font-weight:600;cursor:pointer;border-radius:var(--radius-md);color:var(--color-gray-500);transition:all var(--transition-base)}
+.tab.active{background:var(--gradient-brand);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,.4)}
+.file-slots{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5)}
+.file-slot{border:1px dashed var(--glass-border);border-radius:var(--radius-xl);
+  padding:var(--space-5);cursor:pointer;transition:all var(--transition-base);
+  position:relative;text-align:center;min-height:100px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:var(--space-2)}
+.file-slot:hover,.file-slot.drag{border-color:var(--color-blue-500);background:rgba(37,99,235,0.07)}
+.file-slot input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.file-slot-icon{font-size:1.6rem}
+.file-slot-label{font-size:var(--font-size-xs);color:var(--color-gray-500);line-height:1.4}
+.file-slot-label strong{color:var(--color-blue-400);display:block;margin-bottom:2px}
+.file-slot.filled{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.05)}
+.file-slot.filled .file-slot-label{color:var(--color-gray-300)}
+.file-slot-clear{position:absolute;top:6px;right:8px;background:none;border:none;
+  color:var(--color-gray-600);cursor:pointer;font-size:.85rem;z-index:2;transition:color var(--transition-fast)}
+.file-slot-clear:hover{color:var(--color-error)}
+.batch-dz{border:2px dashed rgba(37,99,235,0.4);border-radius:var(--radius-xl);
+  padding:var(--space-12) var(--space-8);text-align:center;cursor:pointer;
+  transition:all var(--transition-base);background:rgba(37,99,235,0.03);position:relative}
+.batch-dz:hover,.batch-dz.drag{border-color:var(--color-blue-500);background:rgba(37,99,235,0.08)}
+.batch-dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.batch-counter{font-size:var(--font-size-sm);color:var(--color-gray-400);margin-bottom:var(--space-3)}
+.batch-counter strong{color:var(--color-cyan-glow)}
+.bp-bar{height:4px;background:var(--glass-border);border-radius:var(--radius-full);margin-bottom:var(--space-6);overflow:hidden}
+.bp-fill{height:100%;background:var(--gradient-brand);border-radius:var(--radius-full);transition:width .4s ease}
+.fqueue{display:flex;flex-direction:column;gap:0;border:1px solid var(--glass-border);border-radius:var(--radius-xl);overflow:hidden}
+.fqi{background:var(--glass-bg);border-bottom:1px solid var(--glass-border);transition:all var(--transition-base)}
+.fqi:last-child{border-bottom:none}
+.fqi.done{background:rgba(16,185,129,0.06);border-left:3px solid var(--color-success)}
+.fqi-summary{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4) var(--space-5);cursor:pointer}
+.fqi-icon{font-size:1.4rem;flex-shrink:0;width:2rem;text-align:center}
+.fqi-info{flex:1;min-width:0}
+.fqi-name{font-size:var(--font-size-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fqi-sub{font-size:var(--font-size-xs);color:var(--color-gray-500);margin-top:2px}
+.fqi-badge{font-size:var(--font-size-xs);font-weight:600;padding:2px var(--space-2);border-radius:var(--radius-full)}
+.fqi-badge.pending{background:rgba(245,158,11,0.15);color:#FCD34D;border:1px solid rgba(245,158,11,.25)}
+.fqi-badge.done{background:rgba(16,185,129,0.15);color:#6EE7B7;border:1px solid rgba(16,185,129,.25)}
+.fqi-expand{background:none;border:none;color:var(--color-gray-500);cursor:pointer;font-size:.9rem;
+  padding:var(--space-1);transition:transform var(--transition-fast)}
+.fqi-expand.open{transform:rotate(180deg)}
+.fqi-form{display:none;padding:0 var(--space-5) var(--space-5);border-top:1px solid var(--glass-border)}
+.fqi-form.open{display:block}
+.att-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin-top:var(--space-4)}
+.att-slot{border:1px dashed var(--glass-border);border-radius:var(--radius-lg);
+  padding:var(--space-3);cursor:pointer;position:relative;text-align:center;
+  min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all var(--transition-base)}
+.att-slot:hover{border-color:var(--color-blue-500);background:rgba(37,99,235,.06)}
+.att-slot input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.att-slot.filled{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.05)}
+.att-slot-icon{font-size:1.1rem}
+.att-slot-lbl{font-size:var(--font-size-xs);color:var(--color-gray-500);margin-top:2px;line-height:1.3}
+.att-clear{position:absolute;top:3px;right:5px;background:none;border:none;
+  color:var(--color-gray-600);cursor:pointer;font-size:.75rem;z-index:2;transition:color var(--transition-fast)}
+.att-clear:hover{color:var(--color-error)}
+.dpreview{border-radius:var(--radius-xl);overflow:hidden;height:190px;
+  background:var(--color-bg-mid);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-6)}
+.dpreview img{width:100%;height:100%;object-fit:cover}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6)}
+.di label{font-size:var(--font-size-xs);color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+.di p{font-size:var(--font-size-base);color:var(--color-gray-300)}
+.dfiles{display:flex;flex-direction:column;gap:var(--space-3)}
+.dfile{display:flex;align-items:center;gap:var(--space-3);background:var(--glass-bg);
+  border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);transition:all var(--transition-base)}
+.dfile:hover{border-color:var(--glass-border-hover)}
+.dfile-icon{font-size:1.4rem}
+.dfile-info{flex:1}
+.dfile-label{font-size:var(--font-size-sm);font-weight:500;color:var(--color-gray-100)}
+.dfile-name{font-size:var(--font-size-xs);color:var(--color-gray-500);margin-top:1px}
+.sec-label{font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--color-gray-500);margin-bottom:var(--space-3)}
+.desc-box{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  padding:var(--space-4);font-size:var(--font-size-sm);color:var(--color-gray-300);line-height:1.7;margin-bottom:var(--space-5)}
+.cat-mgmt-list{display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-5)}
+.cat-mgmt-item{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+  background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4)}
+.empty{text-align:center;padding:var(--space-16) var(--space-8);color:var(--color-gray-500);grid-column:1/-1}
+.empty-icon{font-size:3rem;margin-bottom:var(--space-4);opacity:.4;display:block}
+.empty h3{font-size:var(--font-size-lg);font-weight:600;color:var(--color-gray-400);margin-bottom:var(--space-2)}
+.toast{position:fixed;bottom:var(--space-8);right:var(--space-8);z-index:2000;
+  background:var(--color-bg-elevated);border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  padding:var(--space-3) var(--space-6);font-size:var(--font-size-sm);display:flex;align-items:center;
+  gap:var(--space-3);box-shadow:var(--shadow-lg);transform:translateY(16px);opacity:0;
+  transition:all var(--transition-base);pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.1)}
+.toast.err{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--glass-border);
+  border-top-color:var(--color-blue-400);border-radius:50%;animation:rotate .8s linear infinite}
+@keyframes rotate{to{transform:rotate(360deg)}}
+.api-error-banner{background:var(--color-error-light);border:1px solid rgba(239,68,68,.3);
+  border-radius:var(--radius-lg);padding:var(--space-3) var(--space-5);
+  font-size:var(--font-size-sm);color:#FCA5A5;margin-bottom:var(--space-4);display:none}
+.api-error-banner.show{display:flex;align-items:center;gap:var(--space-3)}
+[data-cc="blue"]{color:#60A5FA}[data-cc="cyan"]{color:#22D3EE}[data-cc="green"]{color:#34D399}
+[data-cc="yellow"]{color:#FCD34D}[data-cc="red"]{color:#FCA5A5}[data-cc="purple"]{color:#C4B5FD}
+[data-cc="orange"]{color:#FDBA74}[data-cc="pink"]{color:#F9A8D4}
+@media(max-width:640px){
+  .frow,.file-slots,.att-grid{grid-template-columns:1fr}
+  .dgrid{grid-template-columns:1fr}
+  .reports-grid{grid-template-columns:1fr}
+  .filters-bar{flex-direction:column;align-items:stretch}
+}
+
+/* ── VIEWER MODAL ──────────────────────────────────────────── */
+.viewer-overlay{position:fixed;inset:0;background:rgba(2,8,24,0.96);backdrop-filter:blur(12px);
+  z-index:2000;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;transition:all var(--transition-base)}
+.viewer-overlay.open{opacity:1;visibility:visible}
+.viewer-topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-4) var(--space-6);border-bottom:1px solid var(--glass-border);
+  background:rgba(2,8,24,0.8);backdrop-filter:blur(20px);flex-shrink:0}
+.viewer-title{font-size:var(--font-size-base);font-weight:600;color:var(--color-gray-300);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw}
+.viewer-actions{display:flex;gap:var(--space-3);align-items:center;flex-shrink:0}
+.viewer-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  padding:var(--space-4)}
+.viewer-body iframe{width:100%;height:100%;border:none;border-radius:var(--radius-lg);
+  background:#fff}
+.viewer-body img{max-width:100%;max-height:100%;object-fit:contain;border-radius:var(--radius-lg);
+  box-shadow:0 8px 40px rgba(0,0,0,0.6)}
+.viewer-loading{color:var(--color-gray-500);font-size:var(--font-size-base);
+  display:flex;flex-direction:column;align-items:center;gap:var(--space-4)}
+
+/* ── QUICK ADD CATEGORY ──────────────────────────────────── */
+.cat-quick-wrap{display:flex;gap:var(--space-2);align-items:flex-end}
+.cat-quick-wrap .sel-wrap{flex:1}
+.btn-add-cat{flex-shrink:0;height:42px;padding:0 var(--space-3);font-size:1rem;
+  background:rgba(37,99,235,0.15);border:1px dashed rgba(96,165,250,0.4);
+  border-radius:var(--radius-lg);color:var(--color-blue-400);cursor:pointer;
+  transition:all var(--transition-base);display:flex;align-items:center;justify-content:center;
+  font-weight:700;min-width:42px}
+.btn-add-cat:hover{background:rgba(37,99,235,0.28);border-color:var(--color-blue-400);color:#fff}
+.cat-popover{position:fixed;z-index:3000;background:var(--color-bg-elevated);
+  border:1px solid var(--glass-border-brand);border-radius:var(--radius-xl);
+  padding:var(--space-5);box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(37,99,235,.2);
+  min-width:280px;display:none}
+.cat-popover.open{display:block;animation:popIn .15s ease}
+@keyframes popIn{from{opacity:0;transform:scale(.95) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.cat-popover-title{font-size:var(--font-size-sm);font-weight:700;margin-bottom:var(--space-3);
+  color:var(--color-gray-100);display:flex;align-items:center;gap:var(--space-2)}
+.cat-popover-row{display:flex;gap:var(--space-2)}
+.cat-popover-row .finput{flex:1;padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm)}
+.cat-popover-cancel{font-size:var(--font-size-xs);color:var(--color-gray-500);
+  background:none;border:none;cursor:pointer;padding:var(--space-1) var(--space-2);
+  border-radius:var(--radius-sm);transition:color var(--transition-fast);margin-top:var(--space-2);
+  display:block;width:100%;text-align:center}
+.cat-popover-cancel:hover{color:var(--color-gray-300)}
+
+/* ── CAT EDIT INLINE ─────────────────────────────────────── */
+.cat-mgmt-item{position:relative}
+.cat-item-actions{display:flex;gap:var(--space-2);align-items:center;flex-shrink:0}
+.cat-edit-row{display:none;padding:var(--space-3) var(--space-4) var(--space-4);
+  border-top:1px solid var(--glass-border);gap:var(--space-2);align-items:center}
+.cat-edit-row.open{display:flex}
+.btn-disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.cat-in-use-tip{font-size:var(--font-size-xs);color:var(--color-gray-600);
+  display:flex;align-items:center;gap:4px}
+
+/* ── APPLICATION BADGE ───────────────────────────────────── */
+.app-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(48,168,48,0.15);
+  border:1px solid rgba(48,168,48,0.35);border-radius:var(--radius-full);
+  padding:2px var(--space-3);font-size:var(--font-size-xs);font-weight:700;
+  color:#6EE7B7;letter-spacing:.04em}
+.pill-app{background:rgba(48,168,48,0.12);border-color:rgba(48,168,48,0.3);color:#6EE7B7}
+.pill-app.active{background:rgba(48,168,48,0.25);border-color:#30A830;color:#A7F3D0}
+</style>
+</head>
+<body>
+<div class="aurora-bg"></div>
+
+<nav class="top-nav">
+  <div class="container">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <div class="nav-logo-icon">W</div>
+        <div><div class="nav-logo-name">WMI Solutions</div><div class="nav-logo-sub">Repositório de Relatórios</div></div>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openCatModal()">⚙ Categorias</button>
+        <button class="btn btn-ghost btn-sm" onclick="openUpload('single')">+ Individual</button>
+        <button class="btn btn-primary btn-md" onclick="openUpload('batch')">⬆ Importar em Lote</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-tag"><span class="hero-dot"></span>Portal Interno · WMI Solutions</div>
+    <h1>Repositório de <span class="text-gradient">Relatórios</span></h1>
+    <p>Consulte e baixe relatórios compartilhados por toda a empresa.</p>
+    <div class="stats-bar">
+      <div><div class="stat-v text-gradient" id="s-total">—</div><div class="stat-l">Relatórios</div></div>
+      <div><div class="stat-v text-gradient" id="s-cats">—</div><div class="stat-l">Categorias</div></div>
+    </div>
+  </div>
+
+  <div class="api-error-banner" id="api-err">
+    ⚠️ <span id="api-err-msg">Não foi possível conectar à API.</span>
+  </div>
+
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search" placeholder="Buscar relatório..." oninput="debounceLoad()">
+    </div>
+    <div class="pills" id="pills">
+      <span class="pill active" onclick="setFilter('all',this)">Todos</span>
+    </div>
+    <div class="pills" id="app-pills" style="padding-top:var(--space-2);border-top:1px solid var(--glass-border);width:100%">
+      <span style="font-size:var(--font-size-xs);color:var(--color-gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.08em;align-self:center">Aplicação:</span>
+      <span class="pill pill-app active" onclick="setAppFilter('all',this)">Todas</span>
+      <span class="pill pill-app" onclick="setAppFilter('AUTOLAC',this)">AUTOLAC</span>
+      <span class="pill pill-app" onclick="setAppFilter('FINANCEIRO',this)">FINANCEIRO</span>
+      <span class="pill pill-app" onclick="setAppFilter('ESTOQUE',this)">ESTOQUE</span>
+    </div>
+  </div>
+
+  <div class="reports-grid" id="grid">
+    <div class="empty"><span class="spin" style="width:24px;height:24px;border-width:3px"></span></div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="overlay" id="ov-upload">
+  <div class="modal modal-xl">
+    <div class="mhead"><h2 id="upload-title">Publicar Relatório</h2><button class="mclose" onclick="closeOv('ov-upload')">✕</button></div>
+    <div class="mbody">
+      <div class="tabs">
+        <div class="tab active" id="tab-single" onclick="switchTab('single')">📄 Individual</div>
+        <div class="tab" id="tab-batch" onclick="switchTab('batch')">📦 Importar em Lote</div>
+      </div>
+
+      <!-- SINGLE -->
+      <div id="panel-single">
+        <div class="frow">
+          <div class="fg"><label class="flabel">Nome<em>*</em></label>
+            <input type="text" class="finput" id="s-name" placeholder="Nome do relatório"></div>
+          <div class="fg"><label class="flabel">Categoria<em>*</em></label>
+            <div class="cat-quick-wrap">
+              <div class="sel-wrap"><select class="finput" id="s-cat"></select></div>
+              <button class="btn-add-cat" title="Criar nova categoria" onclick="qcatOpen(this,'s-cat')">＋</button>
+            </div></div>
+        </div>
+        <div class="fg"><label class="flabel">Descrição</label>
+          <textarea class="finput" id="s-desc" placeholder="Objetivo e conteúdo..."></textarea></div>
+        <div class="frow">
+          <div class="fg" style="margin:0"><label class="flabel">Responsável</label>
+            <input type="text" class="finput" id="s-author" placeholder="Nome ou departamento"></div>
+          <div class="fg" style="margin:0"><label class="flabel">Aplicação<em>*</em></label>
+            <div class="sel-wrap">
+              <select class="finput" id="s-app">
+                <option value="">Selecione...</option>
+                <option value="AUTOLAC">AUTOLAC</option>
+                <option value="FINANCEIRO">FINANCEIRO</option>
+                <option value="ESTOQUE">ESTOQUE</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="file-slots">
+          <div class="file-slot" id="slot-main" onclick="document.getElementById('fi-main').click()"
+            ondragover="slotDrag(event,'slot-main')" ondragleave="slotLeave('slot-main')"
+            ondrop="slotDrop(event,'fi-main','main')">
+            <input type="file" id="fi-main" onchange="pickSlot(this,'main')"
+              accept="*">
+            <span class="file-slot-icon">📄</span>
+            <span class="file-slot-label"><strong>Arquivo RTM *</strong>Template do relatório (.rtm)</span>
+          </div>
+          <div class="file-slot" id="slot-extra" onclick="document.getElementById('fi-extra').click()"
+            ondragover="slotDrag(event,'slot-extra')" ondragleave="slotLeave('slot-extra')"
+            ondrop="slotDrop(event,'fi-extra','extra')">
+            <input type="file" id="fi-extra" onchange="pickSlot(this,'extra')"
+              accept="*">
+            <span class="file-slot-icon">🔬</span>
+            <span class="file-slot-label"><strong>Arquivo LAB *</strong>Dados do relatório (.lab)</span>
+          </div>
+          <div class="file-slot" id="slot-pdf" onclick="document.getElementById('fi-pdf').click()"
+            ondragover="slotDrag(event,'slot-pdf')" ondragleave="slotLeave('slot-pdf')"
+            ondrop="slotDrop(event,'fi-pdf','pdf')">
+            <input type="file" id="fi-pdf" onchange="pickSlot(this,'pdf')" accept=".pdf">
+            <span class="file-slot-icon">📋</span>
+            <span class="file-slot-label"><strong>Simulação PDF</strong>Opcional</span>
+          </div>
+          <div class="file-slot" id="slot-img" onclick="document.getElementById('fi-img').click()"
+            ondragover="slotDrag(event,'slot-img')" ondragleave="slotLeave('slot-img')"
+            ondrop="slotDrop(event,'fi-img','img')">
+            <input type="file" id="fi-img" onchange="pickSlot(this,'img')" accept="image/*">
+            <span class="file-slot-icon">🖼️</span>
+            <span class="file-slot-label"><strong>Print da Tela de Filtro</strong>Opcional</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--space-3);justify-content:flex-end">
+          <button class="btn btn-ghost btn-md" onclick="closeOv('ov-upload')">Cancelar</button>
+          <button class="btn btn-primary btn-md" id="btn-single-save" onclick="saveSingle()">✓ Publicar</button>
+        </div>
+      </div>
+
+      <!-- BATCH -->
+      <div id="panel-batch" style="display:none">
+        <div id="batch-step1">
+          <div class="batch-dz" id="batch-dz"
+            ondragover="bDrag(event)" ondragleave="bLeave()" ondrop="bDrop(event)">
+            <input type="file" id="batch-input" multiple
+              accept="*"
+              onchange="bPick(this)">
+            <span style="font-size:3rem;display:block;margin-bottom:var(--space-4)">📦</span>
+            <div style="font-size:var(--font-size-xl);font-weight:700;margin-bottom:var(--space-2)">Arraste múltiplos arquivos</div>
+            <div style="font-size:var(--font-size-sm);color:var(--color-gray-400)">Depois classifique cada um individualmente</div>
+          </div>
+        </div>
+        <div id="batch-step2" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+            <div>
+              <div style="font-size:var(--font-size-lg);font-weight:700;margin-bottom:4px">Classifique os arquivos</div>
+              <div class="batch-counter"><strong id="bc-done">0</strong> de <strong id="bc-total">0</strong> classificados</div>
+            </div>
+            <div style="display:flex;gap:var(--space-3)">
+              <button class="btn btn-ghost btn-sm" onclick="bReset()">↩ Recomeçar</button>
+              <button class="btn btn-primary btn-md" id="btn-batch-save" onclick="saveBatch()">✓ Publicar Todos</button>
+            </div>
+          </div>
+          <div class="bp-bar"><div class="bp-fill" id="bp-fill" style="width:0%"></div></div>
+          <div class="fqueue" id="fqueue"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:var(--space-5)">
+            <button class="btn btn-primary btn-lg" onclick="saveBatch()">✓ Publicar Todos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="ov-detail">
+  <div class="modal modal-md">
+    <div class="mhead"><h2 id="d-title">Detalhes</h2><button class="mclose" onclick="closeOv('ov-detail')">✕</button></div>
+    <div class="mbody" id="d-body"></div>
+  </div>
+</div>
+
+<!-- CATEGORIES MODAL -->
+<div class="overlay" id="ov-cat">
+  <div class="modal modal-sm">
+    <div class="mhead"><h2>Categorias</h2><button class="mclose" onclick="closeOv('ov-cat')">✕</button></div>
+    <div class="mbody">
+      <div class="cat-mgmt-list" id="cat-list"></div>
+      <div style="display:flex;gap:var(--space-3)">
+        <input type="text" class="finput" id="new-cat" placeholder="Nova categoria..."
+          style="flex:1" onkeydown="if(event.key==='Enter')addCat()">
+        <button class="btn btn-primary btn-md" onclick="addCat()">+ Adicionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEWER MODAL -->
+<div class="viewer-overlay" id="ov-viewer">
+  <div class="viewer-topbar">
+    <span class="viewer-title" id="viewer-title">Visualizando arquivo</span>
+    <div class="viewer-actions">
+      <a id="viewer-download" href="#" download class="btn btn-secondary btn-sm">⬇ Baixar</a>
+      <button class="btn btn-ghost btn-sm" onclick="closeViewer()">✕ Fechar</button>
+    </div>
+  </div>
+  <div class="viewer-body" id="viewer-body">
+    <div class="viewer-loading"><span class="spin" style="width:28px;height:28px;border-width:3px"></span><span>Carregando...</span></div>
+  </div>
+</div>
+
+<!-- QUICK ADD CATEGORY POPOVER -->
+<div class="cat-popover" id="cat-popover">
+  <div class="cat-popover-title">🏷️ Nova Categoria</div>
+  <div class="cat-popover-row">
+    <input type="text" class="finput" id="qcat-input" placeholder="Ex: QUALIDADE"
+      onkeydown="if(event.key==='Enter')qcatSave();if(event.key==='Escape')qcatClose();"
+      oninput="this.value=this.value.toUpperCase()">
+    <button class="btn btn-primary btn-sm" onclick="qcatSave()">+ Criar</button>
+  </div>
+  <button class="cat-popover-cancel" onclick="qcatClose()">Cancelar</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────
+// Em produção, troque pelo URL real do backend no Coolify
+const API = window.ENV_API_URL || 'http://localhost:8000';
+
+// ── STATE ──────────────────────────────────────────────────
+let cats = [];
+let curFilter = 'all';
+let curAppFilter = 'all';
+let editId = null;
+// single upload picked files: {main, extra, pdf, img} → File objects
+let SP = {main:null, extra:null, pdf:null, img:null};
+// batch
+let batchItems = [];
+const CC = ['blue','cyan','green','yellow','red','purple','orange','pink'];
+
+// ── API HELPERS ────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(API + path, opts);
+  if (!r.ok) {
+    const err = await r.text().catch(()=>'');
+    throw new Error(err || r.statusText);
+  }
+  return r.json();
+}
+
+function showApiError(msg) {
+  const el = document.getElementById('api-err');
+  document.getElementById('api-err-msg').textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+// ── VIEWER ────────────────────────────────────────────────
+function openViewer(url, filename, role) {
+  if (role === 'pdf') {
+    // PDF: abre em nova aba — forma mais confiável em todos os navegadores
+    window.open(url, '_blank');
+    return;
+  }
+  // Imagem: lightbox interno
+  document.getElementById('viewer-title').textContent = filename;
+  document.getElementById('viewer-download').href = url;
+  document.getElementById('viewer-download').download = filename;
+  const body = document.getElementById('viewer-body');
+  body.innerHTML = '<div class="viewer-loading"><span class="spin" style="width:28px;height:28px;border-width:3px"></span><span>Carregando...</span></div>';
+  document.getElementById('ov-viewer').classList.add('open');
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = filename;
+  img.onload = () => { body.innerHTML = ''; body.appendChild(img); };
+  img.onerror = () => { body.innerHTML = '<div class="viewer-loading">⚠️ Não foi possível carregar a imagem.</div>'; };
+}
+function closeViewer() {
+  document.getElementById('ov-viewer').classList.remove('open');
+  document.getElementById('viewer-body').innerHTML = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeViewer();
+});
+
+// ── QUICK ADD CATEGORY ────────────────────────────────────
+let qcatTargetId = null;
+let qcatTriggerEl = null;
+
+function qcatOpen(triggerBtn, selectId) {
+  qcatTargetId = selectId;
+  qcatTriggerEl = triggerBtn;
+  const pop = document.getElementById('cat-popover');
+  document.getElementById('qcat-input').value = '';
+  // Position popover near trigger button
+  const rect = triggerBtn.getBoundingClientRect();
+  const popW = 280;
+  let left = rect.left;
+  if (left + popW > window.innerWidth - 16) left = window.innerWidth - popW - 16;
+  pop.style.left = left + 'px';
+  // Open above or below depending on space
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow < 140) {
+    pop.style.top = '';
+    pop.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  } else {
+    pop.style.bottom = '';
+    pop.style.top = (rect.bottom + 8) + 'px';
+  }
+  pop.classList.add('open');
+  setTimeout(() => document.getElementById('qcat-input').focus(), 50);
+}
+
+function qcatClose() {
+  document.getElementById('cat-popover').classList.remove('open');
+  qcatTargetId = null;
+}
+
+async function qcatSave() {
+  const name = document.getElementById('qcat-input').value.trim().toUpperCase();
+  if (!name) { document.getElementById('qcat-input').focus(); return; }
+  try {
+    const nc = await api('/api/categories', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, color:'blue'})
+    });
+    cats.push(nc);
+    // Rebuild all cat selects
+    fillCatSelects();
+    // Also refresh all batch selects in DOM
+    document.querySelectorAll('.bq-cat').forEach(sel => {
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">Selecione...</option>' +
+        cats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+      sel.value = prev;
+    });
+    // Select the new cat in the target select
+    if (qcatTargetId) {
+      const sel = document.getElementById(qcatTargetId);
+      if (sel) {
+        sel.value = name;
+        sel.dispatchEvent(new Event('change'));
+      }
+    }
+    qcatClose();
+    toast(`Categoria "${name}" criada e selecionada!`, 'ok');
+  } catch(e) {
+    toast(e.message.includes('409') ? 'Categoria já existe' : 'Erro ao criar: ' + e.message, 'err');
+  }
+}
+
+// Close popover on outside click
+document.addEventListener('click', e => {
+  const pop = document.getElementById('cat-popover');
+  if (pop.classList.contains('open') && !pop.contains(e.target) && !e.target.classList.contains('btn-add-cat')) {
+    qcatClose();
+  }
+});
+
+// ── BOOT ───────────────────────────────────────────────────
+async function boot() {
+  try {
+    cats = await api('/api/categories');
+    renderPills();
+    fillCatSelects();
+    await loadReports();
+    document.getElementById('s-cats').textContent = cats.length;
+  } catch(e) {
+    showApiError('Não foi possível conectar à API. Verifique se o backend está rodando.');
+    document.getElementById('grid').innerHTML = `<div class="empty">
+      <span class="empty-icon">⚠️</span>
+      <h3>API indisponível</h3>
+      <p style="font-size:var(--font-size-sm)">Verifique se o backend está rodando em ${API}</p>
+    </div>`;
+  }
+}
+
+// ── REPORTS ────────────────────────────────────────────────
+let debounceTimer;
+function debounceLoad() { clearTimeout(debounceTimer); debounceTimer = setTimeout(loadReports, 350); }
+
+async function loadReports() {
+  const q = document.getElementById('search').value.trim();
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (curFilter !== 'all') params.set('category', curFilter);
+  if (curAppFilter !== 'all') params.set('application', curAppFilter);
+  try {
+    const reports = await api(`/api/reports?${params}`);
+    document.getElementById('s-total').textContent = reports.length;
+    renderGrid(reports);
+  } catch(e) {
+    showApiError('Erro ao carregar relatórios.');
+  }
+}
+
+function renderGrid(reports) {
+  const grid = document.getElementById('grid');
+  if (!reports.length) {
+    grid.innerHTML = `<div class="empty"><span class="empty-icon">📂</span>
+      <h3>Nenhum relatório encontrado</h3>
+      <p style="font-size:var(--font-size-sm)">Publique um relatório para começar.</p></div>`;
+    return;
+  }
+  grid.innerHTML = reports.map(r => {
+    const cc = catColor(r.category);
+    const dt = new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    const prev = r.preview_id
+      ? `<img src="${API}/api/files/view/${r.preview_id}" alt="preview">`
+      : `<div class="rcard-ph"><div class="rcard-ph-icon">📊</div><span class="rcard-ph-label">${r.category}</span></div>`;
+    return `<div class="rcard" onclick="openDetail('${r.id}')">
+      <div class="rcard-preview">${prev}<div class="rcard-overlay"></div>
+        <span class="rcard-cat" data-cc="${cc}">${r.category}</span></div>
+      <div class="rcard-body">
+        <div class="rcard-title">${esc(r.name)}</div>
+        ${r.description?`<div class="rcard-desc">${esc(r.description)}</div>`:''}
+        ${r.application?`<div style="margin-bottom:var(--space-2)"><span class="app-badge">⚙ ${r.application}</span></div>`:''}
+        <div class="rcard-foot">
+          <div class="rcard-meta">📅 ${dt} · 📎 ${r.file_count} arquivo${r.file_count!=1?'s':''}</div>
+          <div class="rcard-btns">
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editReport('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();delReport('${r.id}','${esc(r.name)}')">🗑</button>
+          </div>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+
+// ── DETAIL ────────────────────────────────────────────────
+async function openDetail(id) {
+  try {
+    const r = await api(`/api/reports/${id}`);
+    const cc = catColor(r.category);
+    const dt = new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    const imgFile = r.files.find(f=>f.role==='img');
+    const roles = {main:'Arquivo RTM',extra:'Arquivo LAB',pdf:'Simulação PDF',img:'Print da Tela de Filtro'};
+    document.getElementById('d-title').textContent = r.name;
+    document.getElementById('d-body').innerHTML = `
+      ${imgFile?`<div class="dpreview"><img src="${API+imgFile.view_url}" onerror="this.parentElement.style.display='none'"></div>`:''}
+      ${r.description?`<div class="sec-label">Descrição</div><div class="desc-box">${esc(r.description)}</div>`:''}
+      <div class="dgrid">
+        <div class="di"><label>Categoria</label><p data-cc="${cc}">${r.category}</p></div>
+        <div class="di"><label>Responsável</label><p>${r.author||'—'}</p></div>
+      <div class="di"><label>Aplicação</label><p>${r.application?`<span class="app-badge">⚙ ${r.application}</span>`:'—'}</p></div>
+        <div class="di"><label>Publicado em</label><p>${dt}</p></div>
+        <div class="di"><label>Arquivos</label><p>${r.files.length}</p></div>
+      </div>
+      <div class="sec-label">Arquivos para Download</div>
+      <div class="dfiles">${r.files.map(f=>`
+        <div class="dfile">
+          <span class="dfile-icon">${fIcon(f.mime_type,f.original_name)}</span>
+          <div class="dfile-info">
+            <div class="dfile-label">${roles[f.role]||f.role}</div>
+            <div class="dfile-name">${f.original_name} · ${fmtBytes(f.size_bytes)}</div>
+          </div>
+          <div style="display:flex;gap:var(--space-2)">
+            ${(f.role==='pdf'||f.role==='img')?`<button class="btn btn-ghost btn-sm" onclick="openViewer('${API+f.view_url}','${f.original_name}','${f.role}')">👁 Ver</button>`:''}
+            <a href="${f.download_url}" download="${f.original_name}" class="btn btn-secondary btn-sm">⬇ Baixar</a>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+        <button class="btn btn-ghost btn-md" onclick="editReport('${r.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-md" onclick="delReport('${r.id}','${esc(r.name)}')">🗑 Excluir</button>
+      </div>`;
+    openOv('ov-detail');
+  } catch(e) { showApiError('Erro ao carregar detalhes.'); }
+}
+
+// ── DELETE ────────────────────────────────────────────────
+async function delReport(id, name) {
+  if (!confirm(`Excluir "${name}"? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await api(`/api/reports/${id}`, {method:'DELETE'});
+    closeOv('ov-detail');
+    toast('Relatório excluído.','ok');
+    loadReports();
+  } catch(e) { showApiError('Erro ao excluir.'); }
+}
+
+// ── UPLOAD MODAL ──────────────────────────────────────────
+function openUpload(tab='single') {
+  editId=null; resetSingle();
+  switchTab(tab);
+  if(tab==='batch') bReset();
+  openOv('ov-upload');
+}
+function switchTab(t) {
+  document.getElementById('panel-single').style.display = t==='single'?'block':'none';
+  document.getElementById('panel-batch').style.display  = t==='batch' ?'block':'none';
+  document.getElementById('tab-single').classList.toggle('active',t==='single');
+  document.getElementById('tab-batch').classList.toggle('active',t==='batch');
+  document.getElementById('upload-title').textContent = t==='single'?'Publicar Relatório Individual':'Importar em Lote';
+}
+
+// ── SINGLE ────────────────────────────────────────────────
+function resetSingle() {
+  SP={main:null,extra:null,pdf:null,img:null};
+  ['s-name','s-desc','s-author'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-app').value='';
+  document.getElementById('s-cat').value='';
+  ['main','extra','pdf','img'].forEach(k => {
+    const sl=document.getElementById('slot-'+k); if(!sl) return;
+    sl.classList.remove('filled');
+    sl.querySelector('.file-slot-clear')?.remove();
+    const icons={main:'📄',extra:'🔬',pdf:'📋',img:'🖼️'};
+    const labels={main:'<strong>Arquivo RTM *</strong>Template do relatório (.rtm)',
+      extra:'<strong>Arquivo LAB *</strong>Dados do relatório (.lab)',
+      pdf:'<strong>Simulação PDF</strong>Opcional',
+      img:'<strong>Print da Tela de Filtro</strong>Opcional'};
+    sl.querySelector('.file-slot-icon').textContent=icons[k];
+    sl.querySelector('.file-slot-label').innerHTML=labels[k];
+    document.getElementById('fi-'+k).value='';
+  });
+}
+function pickSlot(input,key) { if(input.files[0]) setSlot(key,input.files[0]); }
+function setSlot(key, file) {
+  SP[key]=file;
+  const sl=document.getElementById('slot-'+key); if(!sl) return;
+  sl.classList.add('filled');
+  sl.querySelector('.file-slot-icon').textContent=fIcon(file.type,file.name);
+  sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${trunc(file.name,28)}</strong>${fmtBytes(file.size)}`;
+  if(!sl.querySelector('.file-slot-clear')){
+    const btn=document.createElement('button'); btn.className='file-slot-clear'; btn.textContent='✕';
+    btn.onclick=e=>{e.stopPropagation();clearSlot(key);}; sl.appendChild(btn);
+  }
+}
+function clearSlot(key) {
+  SP[key]=null; document.getElementById('fi-'+key).value='';
+  const sl=document.getElementById('slot-'+key); if(!sl) return;
+  sl.classList.remove('filled'); sl.querySelector('.file-slot-clear')?.remove();
+  const icons={main:'📄',extra:'🔬',pdf:'📋',img:'🖼️'};
+  const labels={main:'<strong>Arquivo RTM *</strong>Template do relatório (.rtm)',
+    extra:'<strong>Arquivo LAB *</strong>Dados do relatório (.lab)',
+    pdf:'<strong>Simulação PDF</strong>Opcional',
+    img:'<strong>Print da Tela de Filtro</strong>Opcional'};
+  sl.querySelector('.file-slot-icon').textContent=icons[key];
+  sl.querySelector('.file-slot-label').innerHTML=labels[key];
+}
+function slotDrag(e,id){e.preventDefault();document.getElementById(id).classList.add('drag')}
+function slotLeave(id){document.getElementById(id).classList.remove('drag')}
+function slotDrop(e,inputId,key){
+  e.preventDefault();slotLeave(e.currentTarget.id);
+  const f=e.dataTransfer.files[0]; if(f) setSlot(key,f);
+}
+
+async function saveSingle() {
+  const name=document.getElementById('s-name').value.trim();
+  const cat=document.getElementById('s-cat').value;
+  if(!name){toast('Informe o nome','err');return;}
+  if(!cat){toast('Selecione a categoria','err');return;}
+  if(!SP.main&&!editId){toast('Arquivo RTM obrigatório','err');return;}
+  const btn=document.getElementById('btn-single-save');
+  btn.innerHTML='<span class="spin"></span> Salvando...'; btn.disabled=true;
+  try {
+    const fd=new FormData();
+    fd.append('name',name); fd.append('category',cat);
+    fd.append('description',document.getElementById('s-desc').value.trim());
+    fd.append('author',document.getElementById('s-author').value.trim());
+    fd.append('application',document.getElementById('s-app').value);
+    if(SP.main)  fd.append('main_file', SP.main);
+    if(SP.extra) fd.append('extra_file',SP.extra);
+    if(SP.pdf)   fd.append('pdf_file',  SP.pdf);
+    if(SP.img)   fd.append('img_file',  SP.img);
+    if(editId) {
+      await api(`/api/reports/${editId}`,{method:'PATCH',body:fd});
+      toast('Relatório atualizado!','ok');
+    } else {
+      await api('/api/reports',{method:'POST',body:fd});
+      toast('Relatório publicado!','ok');
+    }
+    closeOv('ov-upload'); loadReports();
+  } catch(e) { showApiError('Erro ao salvar: '+e.message); }
+  finally { btn.innerHTML='✓ Publicar'; btn.disabled=false; }
+}
+
+async function editReport(id) {
+  closeOv('ov-detail'); closeOv('ov-upload');
+  try {
+    const r = await api(`/api/reports/${id}`);
+    editId=id; resetSingle();
+    document.getElementById('s-name').value=r.name;
+    document.getElementById('s-cat').value=r.category;
+    document.getElementById('s-desc').value=r.description||'';
+    document.getElementById('s-author').value=r.author||'';
+    document.getElementById('s-app').value=r.application||'';
+    const roles={main:'Arquivo RTM',extra:'Arquivo LAB',pdf:'Simulação PDF',img:'Print da Tela de Filtro'};
+    r.files.forEach(f=>{
+      const sl=document.getElementById('slot-'+f.role); if(!sl) return;
+      sl.classList.add('filled');
+      sl.querySelector('.file-slot-icon').textContent=fIcon(f.mime_type,f.original_name);
+      sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${trunc(f.original_name,24)}</strong>atual`;
+    });
+    document.getElementById('upload-title').textContent='Editar Relatório';
+    document.getElementById('btn-single-save').textContent='✓ Salvar Alterações';
+    switchTab('single'); openOv('ov-upload');
+  } catch(e) { showApiError('Erro ao carregar relatório.'); }
+}
+
+// ── BATCH ─────────────────────────────────────────────────
+function bDrag(e){e.preventDefault();document.getElementById('batch-dz').classList.add('drag')}
+function bLeave(){document.getElementById('batch-dz').classList.remove('drag')}
+function bDrop(e){e.preventDefault();bLeave();buildBatch(e.dataTransfer.files)}
+function bPick(i){buildBatch(i.files)}
+function buildBatch(files) {
+  if(!files||!files.length) return;
+  batchItems = Array.from(files).map((f,i)=>({
+    id:'b'+i, file:f,
+    name:f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ').trim(),
+    cat:'',desc:'',author:'',application:'',
+    atts:{extra:null,pdf:null,img:null},classified:false
+  }));
+  document.getElementById('batch-step1').style.display='none';
+  document.getElementById('batch-step2').style.display='block';
+  updateBP(); renderQueue();
+}
+function renderQueue() {
+  document.getElementById('fqueue').innerHTML = batchItems.map(item=>`
+    <div class="fqi ${item.classified?'done':''}" id="fqi-${item.id}">
+      <div class="fqi-summary" onclick="toggleFqi('${item.id}')">
+        <span class="fqi-icon">${fIcon(item.file.type,item.file.name)}</span>
+        <div class="fqi-info">
+          <div class="fqi-name">${item.file.name}</div>
+          <div class="fqi-sub">${fmtBytes(item.file.size)} · ${item.classified?
+            `<span style="color:var(--color-success)">${item.name} — ${item.cat}</span>`:
+            '<span style="color:var(--color-warning)">Aguardando classificação</span>'}</div>
+        </div>
+        <span class="fqi-badge ${item.classified?'done':'pending'}">${item.classified?'✓ Pronto':'Pendente'}</span>
+        <button class="fqi-expand ${!item.classified?'open':''}" id="fqe-${item.id}">▼</button>
+      </div>
+      <div class="fqi-form ${!item.classified?'open':''}" id="fqf-${item.id}">
+        <div style="padding-top:var(--space-4)">
+          <div class="frow">
+            <div class="fg" style="margin-bottom:var(--space-3)">
+              <label class="flabel">Nome<em>*</em></label>
+              <input class="finput bq-name" data-id="${item.id}" value="${esc(item.name)}"
+                oninput="bField('${item.id}','name',this.value)">
+            </div>
+            <div class="fg" style="margin-bottom:var(--space-3)">
+              <label class="flabel">Categoria<em>*</em></label>
+              <div class="cat-quick-wrap">
+                <div class="sel-wrap">
+                  <select class="finput bq-cat" id="bq-cat-${item.id}" data-id="${item.id}" onchange="bField('${item.id}','cat',this.value)">
+                    <option value="">Selecione...</option>
+                    ${cats.map(c=>`<option value="${c.name}" ${item.cat===c.name?'selected':''}>${c.name}</option>`).join('')}
+                  </select>
+                </div>
+                <button class="btn-add-cat" title="Criar nova categoria" onclick="qcatOpen(this,'bq-cat-${item.id}')">＋</button>
+              </div>
+            </div>
+          </div>
+          <div class="frow" style="grid-template-columns:1fr 1fr;gap:var(--space-4)">
+            <div class="fg" style="margin-bottom:var(--space-3)">
+              <label class="flabel">Descrição</label>
+              <textarea class="finput" rows="2" oninput="bField('${item.id}','desc',this.value)">${esc(item.desc)}</textarea>
+            </div>
+            <div class="fg" style="margin-bottom:var(--space-3)">
+              <label class="flabel">Responsável</label>
+              <input class="finput" value="${esc(item.author)}" oninput="bField('${item.id}','author',this.value)">
+            </div>
+            <div class="fg" style="margin-bottom:var(--space-3)">
+              <label class="flabel">Aplicação<em>*</em></label>
+              <div class="sel-wrap">
+                <select class="finput" data-id="${item.id}" onchange="bField('${item.id}','application',this.value)">
+                  <option value="">Selecione...</option>
+                  <option value="AUTOLAC" ${item.application==='AUTOLAC'?'selected':''}>AUTOLAC</option>
+                  <option value="FINANCEIRO" ${item.application==='FINANCEIRO'?'selected':''}>FINANCEIRO</option>
+                  <option value="ESTOQUE" ${item.application==='ESTOQUE'?'selected':''}>ESTOQUE</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray-500);margin-bottom:var(--space-2)">Arquivos adicionais</div>
+          <div class="att-grid">
+            ${attSlot(item.id,'extra','🔬','Arquivo LAB',item.atts.extra)}
+            ${attSlot(item.id,'pdf','📋','PDF Simulação',item.atts.pdf)}
+            ${attSlot(item.id,'img','🖼️','Print Filtro',item.atts.img)}
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:var(--space-4)">
+            <button class="btn btn-primary btn-md" onclick="markDone('${item.id}')">✓ Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function attSlot(itemId,key,icon,label,existing) {
+  const filled=!!existing;
+  return `<div class="att-slot ${filled?'filled':''}" id="att-${itemId}-${key}">
+    <input type="file" accept="*"
+      onchange="bAtt('${itemId}','${key}',this)">
+    <span class="att-slot-icon">${filled?fIcon(existing.type,existing.name):icon}</span>
+    <span class="att-slot-lbl">${filled?trunc(existing.name,16):label}</span>
+    ${filled?`<button class="att-clear" onclick="event.stopPropagation();clearAtt('${itemId}','${key}')">✕</button>`:''}
+  </div>`;
+}
+function bField(id,key,val){const i=batchItems.find(x=>x.id===id);if(i)i[key]=val;}
+function bAtt(itemId,key,input){
+  const f=input.files[0]; if(!f) return;
+  const item=batchItems.find(x=>x.id===itemId); if(!item) return;
+  item.atts[key]=f;
+  const sl=document.getElementById(`att-${itemId}-${key}`); if(!sl) return;
+  sl.classList.add('filled');
+  sl.querySelector('.att-slot-icon').textContent=fIcon(f.type,f.name);
+  sl.querySelector('.att-slot-lbl').textContent=trunc(f.name,16);
+  if(!sl.querySelector('.att-clear')){
+    const b=document.createElement('button');b.className='att-clear';b.textContent='✕';
+    b.onclick=e=>{e.stopPropagation();clearAtt(itemId,key)};sl.appendChild(b);
+  }
+}
+function clearAtt(itemId,key){
+  const item=batchItems.find(x=>x.id===itemId);if(item)item.atts[key]=null;
+  const sl=document.getElementById(`att-${itemId}-${key}`);if(!sl)return;
+  sl.classList.remove('filled');
+  const icons={extra:'🔬',pdf:'📋',img:'🖼️'},labels={extra:'Arquivo LAB',pdf:'PDF Simulação',img:'Print Filtro'};
+  sl.querySelector('.att-slot-icon').textContent=icons[key];
+  sl.querySelector('.att-slot-lbl').textContent=labels[key];
+  sl.querySelector('.att-clear')?.remove();
+}
+function markDone(id){
+  const item=batchItems.find(x=>x.id===id); if(!item) return;
+  const nameEl=document.querySelector(`.bq-name[data-id="${id}"]`);
+  const catEl=document.querySelector(`.bq-cat[data-id="${id}"]`);
+  if(nameEl) item.name=nameEl.value.trim();
+  if(catEl)  item.cat=catEl.value;
+  if(!item.name){toast('Informe o nome','err');return;}
+  if(!item.cat){toast('Selecione a categoria','err');return;}
+  item.classified=true;
+  const row=document.getElementById(`fqi-${id}`); if(row) row.className='fqi done';
+  toggleFqi(id,false); updateBP();
+  // update sub text
+  const sub=row?.querySelector('.fqi-sub');
+  if(sub) sub.innerHTML=`${fmtBytes(item.file.size)} · <span style="color:var(--color-success)">${item.name} — ${item.cat}</span>`;
+  const badge=row?.querySelector('.fqi-badge');
+  if(badge){badge.className='fqi-badge done';badge.textContent='✓ Pronto';}
+}
+function toggleFqi(id,forceOpen){
+  const f=document.getElementById(`fqf-${id}`),b=document.getElementById(`fqe-${id}`);
+  if(!f) return;
+  const open=forceOpen!==undefined?forceOpen:!f.classList.contains('open');
+  f.classList.toggle('open',open);if(b)b.classList.toggle('open',open);
+}
+function updateBP(){
+  const done=batchItems.filter(x=>x.classified).length,total=batchItems.length;
+  document.getElementById('bc-done').textContent=done;
+  document.getElementById('bc-total').textContent=total;
+  document.getElementById('bp-fill').style.width=total?(done/total*100)+'%':'0%';
+}
+async function saveBatch(){
+  const unc=batchItems.filter(x=>!x.classified);
+  if(unc.length&&!confirm(`${unc.length} arquivo(s) não classificados serão ignorados. Continuar?`)) return;
+  const toSave=batchItems.filter(x=>x.classified);
+  if(!toSave.length){toast('Nenhum item classificado','err');return;}
+  const btn=document.getElementById('btn-batch-save');
+  btn.innerHTML='<span class="spin"></span>'; btn.disabled=true;
+  let ok=0,errors=0;
+  for(const item of toSave){
+    try{
+      const fd=new FormData();
+      fd.append('name',item.name);fd.append('category',item.cat);
+      fd.append('description',item.desc||'');fd.append('author',item.author||'');fd.append('application',item.application||'');
+      fd.append('main_file',item.file);
+      if(item.atts.extra) fd.append('extra_file',item.atts.extra);
+      if(item.atts.pdf)   fd.append('pdf_file',  item.atts.pdf);
+      if(item.atts.img)   fd.append('img_file',  item.atts.img);
+      await api('/api/reports',{method:'POST',body:fd});
+      ok++;
+    }catch{errors++;}
+  }
+  btn.innerHTML='✓ Publicar Todos';btn.disabled=false;
+  closeOv('ov-upload');loadReports();
+  toast(`${ok} publicado(s)${errors?`, ${errors} erro(s)`:''}`,errors?'err':'ok');
+}
+function bReset(){
+  batchItems=[];
+  document.getElementById('batch-step1').style.display='block';
+  document.getElementById('batch-step2').style.display='none';
+  document.getElementById('batch-input').value='';
+}
+
+// ── CATEGORIES ────────────────────────────────────────────
+function catColor(name){const i=cats.findIndex(c=>c.name===name)%CC.length;return CC[i<0?0:i];}
+function renderPills(){
+  const w=document.getElementById('pills');
+  w.innerHTML=`<span class="pill ${curFilter==='all'?'active':''}" onclick="setFilter('all',this)">Todos</span>`;
+  cats.forEach(c=>w.innerHTML+=`<span class="pill ${curFilter===c.name?'active':''}" data-cc="${catColor(c.name)}" onclick="setFilter('${c.name}',this)">${c.name}</span>`);
+}
+function fillCatSelects(){
+  ['s-cat'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const prev=el.value;
+    el.innerHTML='<option value="">Selecione...</option>';
+    cats.forEach(c=>el.innerHTML+=`<option value="${c.name}">${c.name}</option>`);
+    el.value=prev;
+  });
+}
+function setAppFilter(app, el) {
+  curAppFilter = app;
+  document.querySelectorAll('.pill-app').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  loadReports();
+}
+function setFilter(cat,el){
+  curFilter=cat;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  loadReports();
+}
+async function openCatModal(){
+  // Fetch usage count per category
+  let usage = {};
+  try {
+    const all = await api('/api/reports?_nocache=' + Date.now());
+    all.forEach(r => { usage[r.category] = (usage[r.category]||0) + 1; });
+  } catch(e) {}
+
+  document.getElementById('cat-list').innerHTML = cats.map((c,i) => {
+    const count = usage[c.name] || 0;
+    const canRemove = count === 0;
+    return `<div class="cat-mgmt-item" id="catitem-${i}">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4)">
+        <span data-cc="${CC[i%CC.length]}" style="font-weight:600">${c.name}</span>
+        <div class="cat-item-actions">
+          ${count > 0 ? `<span class="cat-in-use-tip">📊 ${count} relatório${count>1?'s':''}</span>` : ''}
+          <button class="btn btn-secondary btn-xs" onclick="toggleCatEdit(${i})">✏️ Editar</button>
+          <button class="btn btn-danger btn-xs ${canRemove?'':'btn-disabled'}"
+            ${canRemove?`onclick="rmCat('${c.name}')"`:``}
+            title="${canRemove?'Remover categoria':'Possui relatórios vinculados — remova-os primeiro'}">
+            🗑
+          </button>
+        </div>
+      </div>
+      <div class="cat-edit-row" id="catedit-${i}">
+        <input type="text" class="finput" id="catinput-${i}" value="${c.name}"
+          style="flex:1;padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm)"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')saveCatEdit(${i},'${c.name}');if(event.key==='Escape')toggleCatEdit(${i})">
+        <button class="btn btn-primary btn-sm" onclick="saveCatEdit(${i},'${c.name}')">✓ Salvar</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleCatEdit(${i})">Cancelar</button>
+      </div>
+    </div>`;
+  }).join('');
+  openOv('ov-cat');
+}
+
+function toggleCatEdit(i) {
+  const row = document.getElementById(`catedit-${i}`);
+  const isOpen = row.classList.contains('open');
+  // Close all others first
+  document.querySelectorAll('.cat-edit-row.open').forEach(r => r.classList.remove('open'));
+  if (!isOpen) {
+    row.classList.add('open');
+    document.getElementById(`catinput-${i}`).focus();
+    document.getElementById(`catinput-${i}`).select();
+  }
+}
+
+async function saveCatEdit(i, oldName) {
+  const newName = document.getElementById(`catinput-${i}`).value.trim().toUpperCase();
+  if (!newName) { toast('Informe um nome','err'); return; }
+  if (newName === oldName) { toggleCatEdit(i); return; }
+  try {
+    await api(`/api/categories/${encodeURIComponent(oldName)}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name: newName})
+    });
+    // Update local state
+    const cat = cats.find(c => c.name === oldName);
+    if (cat) cat.name = newName;
+    renderPills(); fillCatSelects();
+    await openCatModal();
+    toast(`Categoria renomeada para "${newName}"`, 'ok');
+  } catch(e) {
+    toast(e.message.includes('409') ? 'Esse nome já existe' : 'Erro ao renomear', 'err');
+  }
+}
+async function addCat(){
+  const v=document.getElementById('new-cat').value.trim().toUpperCase();if(!v)return;
+  try{
+    const nc=await api('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v,color:'blue'})});
+    cats.push(nc);document.getElementById('new-cat').value='';
+    renderPills();fillCatSelects();openCatModal();toast(`Categoria "${v}" adicionada`,'ok');
+  }catch(e){showApiError(e.message);}
+}
+async function rmCat(name){
+  if(!confirm(`Remover "${name}"?`))return;
+  try{
+    await api(`/api/categories/${encodeURIComponent(name)}`,{method:'DELETE'});
+    cats=cats.filter(c=>c.name!==name);renderPills();fillCatSelects();openCatModal();
+    toast('Categoria removida','ok');
+  }catch(e){showApiError(e.message);}
+}
+
+// ── OVERLAYS ──────────────────────────────────────────────
+function openOv(id){document.getElementById(id).classList.add('open')}
+function closeOv(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)closeOv(el.id)});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>closeOv(o.id));
+});
+
+// ── HELPERS ───────────────────────────────────────────────
+function fIcon(type,name){
+  if((type||'').includes('pdf')||/\.pdf$/i.test(name)) return '📋';
+  if((type||'').includes('image')) return '🖼️';
+  if(/\.xlsx?|\.csv/i.test(name)) return '📊';
+  if(/\.docx?/i.test(name)) return '📝';
+  if(/\.pptx?/i.test(name)) return '📑';
+  if(/\.rtm$/i.test(name)) return '📄';
+  if(/\.lab$/i.test(name)) return '🔬';
+  return '📁';
+}
+function fmtBytes(b){if(!b)return '';if(b<1024)return b+'B';if(b<1048576)return (b/1024).toFixed(1)+'KB';return (b/1048576).toFixed(1)+'MB';}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s}
+let toastTmr;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=(type==='ok'?'✓ ':'✕ ')+msg;
+  el.className=`toast ${type} show`;
+  clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+boot();
+</script>
+</body>
+</html>

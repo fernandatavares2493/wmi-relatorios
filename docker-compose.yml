@@ -1,0 +1,88 @@
+version: "3.9"
+
+# ============================================================
+# Portal de Relatórios WMI — Stack completa local
+# Uso: docker compose up -d
+# ============================================================
+
+services:
+
+  # ── Banco de dados ──────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: wmi-relatorios-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       relatorios
+      POSTGRES_USER:     wmi
+      POSTGRES_PASSWORD: wmi_dev_pass   # TROQUE EM PRODUÇÃO
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wmi -d relatorios"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Object storage (MinIO) ──────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: wmi-relatorios-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER:     minioadmin       # TROQUE EM PRODUÇÃO
+      MINIO_ROOT_PASSWORD: minioadmin123    # TROQUE EM PRODUÇÃO
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Console web (acesse: http://localhost:9001)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Backend (FastAPI) ────────────────────────────────────
+  backend:
+    build: ./backend
+    container_name: wmi-relatorios-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:      postgres://wmi:wmi_dev_pass@postgres:5432/relatorios
+      MINIO_URL:         http://minio:9000
+      MINIO_ACCESS_KEY:  minioadmin
+      MINIO_SECRET_KEY:  minioadmin123
+      MINIO_BUCKET:      relatorios
+      FRONTEND_URL:      http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Frontend (nginx) ─────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: wmi-relatorios-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:
+  minio_data:
