@@ -18,10 +18,18 @@ Usuários → SSO Microsoft (proxy da plataforma WMI)
   (metadados)      (arquivos binários)
 ```
 
-**Autenticação:** o SSO Microsoft da plataforma é obrigatório e automático. O app
-não tem login próprio — lê o e-mail no header `X-Auth-Request-Email` e devolve 403
-se ausente. **Autorização:** papéis na tabela `user_roles` (e-mail → `user`/`admin`).
-Todos os usuários logados consultam e baixam; **apenas admins** criam, editam e excluem.
+**Acesso:**
+- **Leitura/Download — PÚBLICO (sem login):** navegar, ver detalhes e baixar relatórios
+  não exigem identidade. Clientes não precisam de conta/cadastro.
+- **Escrita — ADMIN (com login):** publicar/editar/excluir exige o SSO Microsoft e papel
+  `admin` (tabela `user_roles`, e-mail → `user`/`admin`). O app lê a identidade do header
+  `X-Auth-Request-Email` injetado pelo proxy; sem ela, o usuário é anônimo (só leitura).
+
+> ⚠️ **Importante (infra):** a plataforma WMI Coolify coloca login Microsoft **na frente de
+> todo app** automaticamente. Para que clientes externos acessem **sem login**, a Infra WMI
+> precisa configurar este app para **permitir acesso anônimo** (mantendo a injeção do header
+> para quem está logado, para os admins continuarem publicando). Isso é uma configuração de
+> infraestrutura — o código já está pronto, mas o acesso público depende desse ajuste no proxy.
 
 ## Estrutura do projeto
 
@@ -142,11 +150,40 @@ injeta o `INTERNAL_PROXY_SECRET` (que o backend exige). Nada precisa ser editado
 
 ---
 
+## 2.1 Acesso público de download (pedido para a Infra WMI)
+
+**Objetivo:** clientes externos precisam **baixar relatórios sem fazer login** (sem conta
+Microsoft / sem cadastro). A publicação (criar/editar/excluir) continua restrita à equipe WMI.
+
+**O que o app já faz (pronto no código):**
+- Leitura/listagem/download são **públicos** (não exigem identidade).
+- Escrita exige `X-Auth-Request-Email` + papel `admin`. Sem identidade → o usuário é anônimo
+  (só leitura). Logo, o app funciona tanto para clientes anônimos quanto para admins logados.
+
+**O que falta (configuração de infraestrutura — não é código):**
+A plataforma WMI Coolify protege **todo** app com login Microsoft por padrão. É preciso pedir à
+Infra WMI para liberar o **acesso anônimo** a este app (frontend `relatorios.apps.wmi.solutions`),
+no modo:
+
+> **"Permitir acesso anônimo, mas continuar injetando os headers de identidade
+> (`X-Auth-Request-Email`) quando o usuário estiver logado."**
+
+No OAuth2-Proxy isso costuma ser feito com algo como `--skip-auth-route` / `skip_provider_button`
+mantendo `set_xauthrequest=true`, ou marcando o app como público no painel. Resultado:
+- **Cliente sem login** → passa como anônimo → navega e baixa.
+- **Equipe WMI logada** → header injetado → publica/edita normalmente.
+
+> ⚠️ **Atenção:** com isso, **qualquer pessoa com o link do portal pode baixar qualquer
+> relatório** (não há separação por cliente). É o comportamento desejado para distribuição
+> aberta. Restrição por cliente seria uma evolução futura (exigiria identificação do cliente).
+
+---
+
 ## 3. Segurança (já aplicada / checklist de produção)
 
 - [x] Sem secrets em código/compose — tudo via env vars + `.env` (gitignored)
-- [x] SSO obrigatório (403 sem header) + autorização por papéis (escrita só admin)
-- [x] Download/preview via proxy autenticado (`/api/files/view/{id}`) — MinIO não exposto
+- [x] Leitura/download **públicos** (por decisão de produto); escrita exige SSO + papel admin
+- [x] Download/preview via proxy (`/api/files/view/{id}`) — MinIO nunca exposto diretamente
 - [x] Upload sanitizado (sem path traversal) e com limite (`MAX_UPLOAD_MB`)
 - [x] `Content-Disposition` seguro; tipos não-visualizáveis forçados a download
 - [x] CORS restrito ao `FRONTEND_URL` (nunca `*`); tráfego de produção é mesma-origem
@@ -165,17 +202,18 @@ injeta o `INTERNAL_PROXY_SECRET` (que o backend exige). Nada precisa ser editado
 | Método | Endpoint | Acesso | Descrição |
 |--------|----------|--------|-----------|
 | GET | `/health` | público | Healthcheck (checa Postgres + MinIO) |
-| GET | `/api/me` | logado | Identidade e papel do usuário |
-| GET | `/api/categories` | logado | Listar categorias |
+| GET | `/api/me` | público | Identidade e papel (anônimo se sem login) |
+| GET | `/api/categories` | público | Listar categorias |
 | POST | `/api/categories` | admin | Criar categoria |
 | PATCH | `/api/categories/{name}` | admin | Renomear categoria |
 | DELETE | `/api/categories/{name}` | admin | Remover categoria |
-| GET | `/api/reports` | logado | Listar (filtros `q`, `category`, `application`) |
-| GET | `/api/reports/{id}` | logado | Detalhes + URLs de view/download |
+| GET | `/api/reports` | público | Listar (filtros `q`, `category`, `application`) |
+| GET | `/api/reports/{id}` | público | Detalhes + URLs de view/download |
 | POST | `/api/reports` | admin | Criar relatório (multipart/form-data) |
+| POST | `/api/reports/zip` | admin | Criar a partir de .zip (RTM/LAB extraídos) |
 | PATCH | `/api/reports/{id}` | admin | Editar relatório |
 | DELETE | `/api/reports/{id}` | admin | Excluir relatório + arquivos |
-| GET | `/api/files/view/{file_id}` | logado | Servir arquivo (`?download=1` força download) |
+| GET | `/api/files/view/{file_id}` | **público** | Baixar/visualizar arquivo (`?download=1` força download) |
 
 Documentação interativa em `/docs` (Swagger UI).
 

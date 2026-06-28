@@ -19,7 +19,9 @@ from botocore.exceptions import ClientError
 from botocore.config import Config
 import os
 import re
+import io
 import uuid
+import zipfile
 
 # ──────────────────────────────────────────
 # CONFIG (via env vars)
@@ -165,22 +167,30 @@ ON CONFLICT (name) DO NOTHING;
 # ──────────────────────────────────────────
 # AUTENTICAÇÃO / AUTORIZAÇÃO (SSO da plataforma)
 # ──────────────────────────────────────────
-async def current_user(request: Request) -> dict:
-    """
-    Lê a identidade injetada pelo SSO Microsoft (header X-Auth-Request-Email).
-    Em produção, sem header → 403 (login é responsabilidade do proxy).
-    Em desenvolvimento, cai no DEV_USER_EMAIL. Provisiona o usuário na primeira
-    visita (lazy provisioning) com papel 'user', ou 'admin' se estiver em ADMIN_EMAILS.
-    """
-    # Defesa em profundidade: exige o segredo injetado pelo nginx do frontend.
+def _check_proxy(request: Request):
+    """Defesa em profundidade: exige o segredo injetado pelo nginx do frontend."""
     if INTERNAL_PROXY_SECRET and request.headers.get("x-internal-proxy") != INTERNAL_PROXY_SECRET:
         raise HTTPException(403, "Origem não autorizada")
+
+
+ANON_USER = {"email": None, "name": None, "role": "anonymous", "is_admin": False, "anonymous": True}
+
+
+async def current_user_optional(request: Request) -> dict:
+    """
+    Identidade do SSO Microsoft (header X-Auth-Request-Email), se houver.
+    Sem header → usuário ANÔNIMO (acesso público de leitura/download — clientes
+    não precisam de login/cadastro). Em desenvolvimento, cai no DEV_USER_EMAIL.
+    Provisiona o usuário logado na primeira visita (lazy) com papel 'user',
+    ou 'admin' se estiver em ADMIN_EMAILS.
+    """
+    _check_proxy(request)
 
     email = request.headers.get("x-auth-request-email")
     if not email and APP_ENV == "development":
         email = DEV_USER_EMAIL
     if not email:
-        raise HTTPException(403, "Sem identidade SSO")
+        return dict(ANON_USER)
 
     email = email.strip().lower()
     name = request.headers.get("x-auth-request-user") or email
@@ -197,12 +207,13 @@ async def current_user(request: Request) -> dict:
         else:
             role = row["role"]
 
-    return {"email": email, "name": name, "role": role, "is_admin": role == "admin"}
+    return {"email": email, "name": name, "role": role, "is_admin": role == "admin", "anonymous": False}
 
 
-async def require_admin(user: dict = Depends(current_user)) -> dict:
-    if not user["is_admin"]:
-        raise HTTPException(403, "Requer privilégio de administrador")
+async def require_admin(user: dict = Depends(current_user_optional)) -> dict:
+    """Escrita exige login de administrador (SSO + papel admin)."""
+    if not user.get("is_admin"):
+        raise HTTPException(403, "Requer login de administrador")
     return user
 
 
@@ -276,6 +287,57 @@ def delete_from_minio(key: str):
         pass
 
 
+def guess_mime_by_ext(filename: str) -> str:
+    """Infere o mime pela extensão (entradas de zip não trazem content-type).
+    Importante para o viewer servir PDF/imagem inline."""
+    ext = os.path.splitext(filename)[1].lower()
+    return {
+        ".pdf": "application/pdf",
+        ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".gif": "image/gif", ".webp": "image/webp", ".bmp": "image/bmp",
+    }.get(ext, "application/octet-stream")
+
+
+ZIP_ROLE_BY_EXT = {".rtm": "main", ".lab": "extra", ".pdf": "pdf"}
+ZIP_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+
+
+def extract_bundle(data: bytes):
+    """Lê um .zip e devolve ({role: (filename, bytes)}, nome_sugerido).
+    Mapeia .rtm->main, .lab->extra, .pdf->pdf, imagem->img. Exige um .rtm.
+    Protege contra zip-bomb checando o tamanho descompactado declarado."""
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile:
+        raise HTTPException(400, "Arquivo .zip inválido ou corrompido")
+
+    found = {}
+    total = 0
+    suggested = ""
+    for info in zf.infolist():
+        if info.is_dir():
+            continue
+        base = info.filename.replace("\\", "/").split("/")[-1]
+        if not base or base.startswith(".") or "__MACOSX" in info.filename:
+            continue
+        ext = os.path.splitext(base)[1].lower()
+        role = ZIP_ROLE_BY_EXT.get(ext) or ("img" if ext in ZIP_IMAGE_EXTS else None)
+        if not role or role in found:
+            continue
+        if info.file_size > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, f"'{base}' excede o limite de {MAX_UPLOAD_MB} MB")
+        total += info.file_size
+        if total > MAX_UPLOAD_BYTES * 5:
+            raise HTTPException(413, "Conteúdo do .zip excede o limite total permitido")
+        found[role] = (base, zf.read(info))
+        if ext == ".rtm" and not suggested:
+            suggested = os.path.splitext(base)[0]
+
+    if "main" not in found:
+        raise HTTPException(400, "O .zip precisa conter um arquivo .rtm")
+    return found, suggested
+
+
 async def ensure_category_exists(conn, category: str):
     ok = await conn.fetchval("SELECT 1 FROM categories WHERE name=$1", category)
     if not ok:
@@ -327,7 +389,7 @@ async def health():
 # ME (identidade do usuário logado)
 # ──────────────────────────────────────────
 @app.get("/api/me")
-async def me(user: dict = Depends(current_user)):
+async def me(user: dict = Depends(current_user_optional)):
     return user
 
 
@@ -335,7 +397,7 @@ async def me(user: dict = Depends(current_user)):
 # CATEGORIES
 # ──────────────────────────────────────────
 @app.get("/api/categories")
-async def list_categories(user: dict = Depends(current_user), conn=Depends(get_db)):
+async def list_categories(user: dict = Depends(current_user_optional), conn=Depends(get_db)):
     rows = await conn.fetch("SELECT * FROM categories ORDER BY is_default DESC, name")
     return [dict(r) for r in rows]
 
@@ -388,7 +450,7 @@ async def list_reports(
     q: Optional[str] = None,
     category: Optional[str] = None,
     application: Optional[str] = None,
-    user: dict = Depends(current_user),
+    user: dict = Depends(current_user_optional),
     conn=Depends(get_db),
 ):
     filters = ["1=1"]
@@ -434,7 +496,7 @@ async def list_reports(
 # REPORTS — GET ONE
 # ──────────────────────────────────────────
 @app.get("/api/reports/{report_id}")
-async def get_report(report_id: str, user: dict = Depends(current_user), conn=Depends(get_db)):
+async def get_report(report_id: str, user: dict = Depends(current_user_optional), conn=Depends(get_db)):
     return await serialize_report(conn, parse_uuid(report_id))
 
 
@@ -476,6 +538,72 @@ async def create_report(
                 """INSERT INTO reports (id, name, description, author, category, application)
                    VALUES ($1, $2, $3, $4, $5, $6)""",
                 report_id, name.strip(), description.strip(), author.strip(),
+                category, application.strip(),
+            )
+            for role, oname, key, mime, size in files_meta:
+                await conn.execute(
+                    """INSERT INTO report_files
+                       (report_id, role, original_name, storage_key, mime_type, size_bytes)
+                       VALUES ($1, $2, $3, $4, $5, $6)""",
+                    report_id, role, oname, key, mime, size,
+                )
+    except Exception:
+        for key in uploaded_keys:
+            delete_from_minio(key)
+        raise
+
+    return await serialize_report(conn, report_id)
+
+
+# ──────────────────────────────────────────
+# REPORTS — CREATE A PARTIR DE .ZIP
+# (cliente envia o zip recebido; o backend extrai RTM/LAB/PDF/imagem)
+# ──────────────────────────────────────────
+@app.post("/api/reports/zip")
+async def create_report_from_zip(
+    bundle:      UploadFile = File(...),
+    name:        Optional[str] = Form(None),
+    category:    str = Form(...),
+    description: str = Form(""),
+    author:      str = Form(""),
+    application: str = Form(""),
+    pdf_file:    Optional[UploadFile] = File(None),
+    img_file:    Optional[UploadFile] = File(None),
+    user: dict = Depends(require_admin),
+    conn=Depends(get_db),
+):
+    await ensure_category_exists(conn, category)
+    raw = await read_limited(bundle)
+    found, suggested = extract_bundle(raw)
+
+    report_name = (name or "").strip() or suggested \
+        or os.path.splitext(os.path.basename(bundle.filename or "relatorio"))[0]
+
+    # Conteúdo do zip (role -> nome, bytes, mime). Anexos manuais de PDF/imagem têm
+    # prioridade sobre o que houver no zip.
+    files = {role: (fname, content, guess_mime_by_ext(fname))
+             for role, (fname, content) in found.items()}
+    for upload, role in [(pdf_file, "pdf"), (img_file, "img")]:
+        if upload and upload.filename:
+            content = await read_limited(upload)
+            mime = upload.content_type or guess_mime_by_ext(upload.filename)
+            files[role] = (upload.filename, content, mime)
+
+    report_id = uuid.uuid4()
+    uploaded_keys: list = []
+    try:
+        files_meta = []
+        for role, (fname, content, mime) in files.items():
+            key = make_storage_key(report_id, role, fname)
+            await run_in_threadpool(_put_object, content, key, mime)
+            uploaded_keys.append(key)
+            files_meta.append((role, clean_display_name(fname), key, mime, len(content)))
+
+        async with conn.transaction():
+            await conn.execute(
+                """INSERT INTO reports (id, name, description, author, category, application)
+                   VALUES ($1, $2, $3, $4, $5, $6)""",
+                report_id, report_name, description.strip(), author.strip(),
                 category, application.strip(),
             )
             for role, oname, key, mime, size in files_meta:
@@ -599,7 +727,7 @@ async def delete_report(report_id: str, user: dict = Depends(require_admin), con
 async def view_file(
     file_id: int,
     download: bool = False,
-    user: dict = Depends(current_user),
+    user: dict = Depends(current_user_optional),
     conn=Depends(get_db),
 ):
     row = await conn.fetchrow(

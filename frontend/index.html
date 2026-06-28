@@ -397,6 +397,22 @@ textarea.finput{resize:vertical;min-height:72px}
 
       <!-- SINGLE -->
       <div id="panel-single">
+        <!-- Atalho: soltar o .zip do relatório (RTM + LAB extraídos automaticamente) -->
+        <div class="batch-dz" id="zip-dz" style="padding:var(--space-6);margin-bottom:var(--space-5)"
+          ondragover="zipDrag(event)" ondragleave="zipLeave()" ondrop="zipDrop(event)">
+          <input type="file" id="zip-input" accept=".zip" onchange="zipPick(this)">
+          <span style="font-size:2rem;display:block;margin-bottom:var(--space-2)">📦</span>
+          <div style="font-weight:700;margin-bottom:2px">Tem o .zip do relatório? Solte aqui</div>
+          <div style="font-size:var(--font-size-sm);color:var(--color-gray-400)">Extraímos o RTM e o LAB automaticamente — você não precisa descompactar</div>
+        </div>
+        <div id="zip-chosen" style="display:none;align-items:center;gap:var(--space-3);background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-5)">
+          <span style="font-size:1.4rem">📦</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:var(--font-size-sm)" id="zip-name"></div>
+            <div style="font-size:var(--font-size-xs);color:var(--color-gray-500)">RTM e LAB serão extraídos do zip ao publicar.</div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-xs" onclick="clearZip()">✕ Trocar</button>
+        </div>
         <div class="frow">
           <div class="fg"><label class="flabel">Nome<em>*</em></label>
             <input type="text" class="finput" id="s-name" placeholder="Nome do relatório"></div>
@@ -422,7 +438,8 @@ textarea.finput{resize:vertical;min-height:72px}
             </div>
           </div>
         </div>
-        <div class="file-slots">
+        <div class="sec-label" id="manual-label" style="margin-bottom:var(--space-2)">Ou envie os arquivos manualmente</div>
+        <div class="file-slots" id="file-slots">
           <div class="file-slot" id="slot-main" onclick="document.getElementById('fi-main').click()"
             ondragover="slotDrag(event,'slot-main')" ondragleave="slotLeave('slot-main')"
             ondrop="slotDrop(event,'fi-main','main')">
@@ -469,8 +486,8 @@ textarea.finput{resize:vertical;min-height:72px}
               accept="*"
               onchange="bPick(this)">
             <span style="font-size:3rem;display:block;margin-bottom:var(--space-4)">📦</span>
-            <div style="font-size:var(--font-size-xl);font-weight:700;margin-bottom:var(--space-2)">Arraste múltiplos arquivos</div>
-            <div style="font-size:var(--font-size-sm);color:var(--color-gray-400)">Depois classifique cada um individualmente</div>
+            <div style="font-size:var(--font-size-xl);font-weight:700;margin-bottom:var(--space-2)">Arraste múltiplos arquivos ou zips</div>
+            <div style="font-size:var(--font-size-sm);color:var(--color-gray-400)">Cada .zip vira um relatório (RTM + LAB extraídos). Depois classifique cada um.</div>
           </div>
         </div>
         <div id="batch-step2" style="display:none">
@@ -562,6 +579,7 @@ let curDetailReport = null;
 let curDetailFiles = [];
 // single upload picked files: {main, extra, pdf, img} → File objects
 let SP = {main:null, extra:null, pdf:null, img:null};
+let SPzip = null; // .zip do relatório (RTM+LAB extraídos no backend)
 // batch
 let batchItems = [];
 const CC = ['blue','cyan','green','yellow','red','purple','orange','pink'];
@@ -843,6 +861,35 @@ function switchTab(t) {
   document.getElementById('upload-title').textContent = t==='single'?'Publicar Relatório Individual':'Importar em Lote';
 }
 
+// ── ZIP (individual) ──────────────────────────────────────
+function zipDrag(e){e.preventDefault();document.getElementById('zip-dz').classList.add('drag');}
+function zipLeave(){document.getElementById('zip-dz').classList.remove('drag');}
+function zipDrop(e){e.preventDefault();zipLeave();const f=e.dataTransfer.files[0];if(f)setZip(f);}
+function zipPick(i){if(i.files[0])setZip(i.files[0]);}
+function setZip(file){
+  if(!/\.zip$/i.test(file.name)){toast('Selecione um arquivo .zip','err');return;}
+  SPzip=file;
+  document.getElementById('zip-name').textContent=file.name+' · '+fmtBytes(file.size);
+  document.getElementById('zip-dz').style.display='none';
+  document.getElementById('zip-chosen').style.display='flex';
+  // RTM e LAB vêm do zip; mantém PDF e imagem visíveis para anexo manual opcional.
+  document.getElementById('slot-main').style.display='none';
+  document.getElementById('slot-extra').style.display='none';
+  document.getElementById('manual-label').textContent='Anexos opcionais (PDF e imagem)';
+  const n=document.getElementById('s-name');
+  if(!n.value.trim()) n.value=file.name.replace(/\.zip$/i,'');
+}
+function clearZip(){
+  SPzip=null;
+  document.getElementById('zip-input').value='';
+  document.getElementById('zip-dz').style.display='';
+  document.getElementById('zip-chosen').style.display='none';
+  document.getElementById('slot-main').style.display='';
+  document.getElementById('slot-extra').style.display='';
+  document.getElementById('file-slots').style.display='';
+  document.getElementById('manual-label').textContent='Ou envie os arquivos manualmente';
+}
+
 // ── SINGLE ────────────────────────────────────────────────
 function resetSingle() {
   SP={main:null,extra:null,pdf:null,img:null};
@@ -862,6 +909,7 @@ function resetSingle() {
     sl.querySelector('.file-slot-label').innerHTML=labels[k];
     document.getElementById('fi-'+k).value='';
   });
+  clearZip();
 }
 function pickSlot(input,key) { if(input.files[0]) setSlot(key,input.files[0]); }
 function setSlot(key, file) {
@@ -897,9 +945,10 @@ function slotDrop(e,inputId,key){
 async function saveSingle() {
   const name=document.getElementById('s-name').value.trim();
   const cat=document.getElementById('s-cat').value;
+  const useZip = SPzip && !editId;
   if(!name){toast('Informe o nome','err');return;}
   if(!cat){toast('Selecione a categoria','err');return;}
-  if(!SP.main&&!editId){toast('Arquivo RTM obrigatório','err');return;}
+  if(!useZip && !SP.main && !editId){toast('Envie o .zip ou o arquivo RTM','err');return;}
   const btn=document.getElementById('btn-single-save');
   btn.innerHTML='<span class="spin"></span> Salvando...'; btn.disabled=true;
   try {
@@ -908,16 +957,24 @@ async function saveSingle() {
     fd.append('description',document.getElementById('s-desc').value.trim());
     fd.append('author',document.getElementById('s-author').value.trim());
     fd.append('application',document.getElementById('s-app').value);
-    if(SP.main)  fd.append('main_file', SP.main);
-    if(SP.extra) fd.append('extra_file',SP.extra);
-    if(SP.pdf)   fd.append('pdf_file',  SP.pdf);
-    if(SP.img)   fd.append('img_file',  SP.img);
-    if(editId) {
-      await api(`/api/reports/${editId}`,{method:'PATCH',body:fd});
-      toast('Relatório atualizado!','ok');
-    } else {
-      await api('/api/reports',{method:'POST',body:fd});
+    if(useZip) {
+      fd.append('bundle', SPzip);
+      if(SP.pdf) fd.append('pdf_file', SP.pdf);
+      if(SP.img) fd.append('img_file', SP.img);
+      await api('/api/reports/zip',{method:'POST',body:fd});
       toast('Relatório publicado!','ok');
+    } else {
+      if(SP.main)  fd.append('main_file', SP.main);
+      if(SP.extra) fd.append('extra_file',SP.extra);
+      if(SP.pdf)   fd.append('pdf_file',  SP.pdf);
+      if(SP.img)   fd.append('img_file',  SP.img);
+      if(editId) {
+        await api(`/api/reports/${editId}`,{method:'PATCH',body:fd});
+        toast('Relatório atualizado!','ok');
+      } else {
+        await api('/api/reports',{method:'POST',body:fd});
+        toast('Relatório publicado!','ok');
+      }
     }
     closeOv('ov-upload'); loadReports();
   } catch(e) { showApiError('Erro ao salvar: '+e.message); }
@@ -929,6 +986,7 @@ async function editReport(id) {
   try {
     const r = await api(`/api/reports/${id}`);
     editId=id; resetSingle();
+    document.getElementById('zip-dz').style.display='none';  // edição usa slots manuais
     document.getElementById('s-name').value=r.name;
     document.getElementById('s-cat').value=r.category;
     document.getElementById('s-desc').value=r.description||'';
@@ -955,7 +1013,7 @@ function bPick(i){buildBatch(i.files)}
 function buildBatch(files) {
   if(!files||!files.length) return;
   batchItems = Array.from(files).map((f,i)=>({
-    id:'b'+i, file:f,
+    id:'b'+i, file:f, isZip:/\.zip$/i.test(f.name),
     name:f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ').trim(),
     cat:'',desc:'',author:'',application:'',
     atts:{extra:null,pdf:null,img:null},classified:false
@@ -1020,12 +1078,21 @@ function renderQueue() {
               </div>
             </div>
           </div>
+          ${item.isZip ? `
+          <div style="font-size:var(--font-size-sm);color:var(--color-gray-400);background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-3)">
+            📦 RTM e LAB serão extraídos do zip <strong>${esc(item.file.name)}</strong>.
+          </div>
+          <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray-500);margin-bottom:var(--space-2)">Anexos opcionais</div>
+          <div class="att-grid">
+            ${attSlot(item.id,'pdf','📋','PDF Simulação',item.atts.pdf)}
+            ${attSlot(item.id,'img','🖼️','Print Filtro',item.atts.img)}
+          </div>` : `
           <div style="font-size:var(--font-size-xs);font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray-500);margin-bottom:var(--space-2)">Arquivos adicionais</div>
           <div class="att-grid">
             ${attSlot(item.id,'extra','🔬','Arquivo LAB',item.atts.extra)}
             ${attSlot(item.id,'pdf','📋','PDF Simulação',item.atts.pdf)}
             ${attSlot(item.id,'img','🖼️','Print Filtro',item.atts.img)}
-          </div>
+          </div>`}
           <div style="display:flex;justify-content:flex-end;margin-top:var(--space-4)">
             <button class="btn btn-primary btn-md" onclick="markDone('${item.id}')">✓ Confirmar</button>
           </div>
@@ -1108,11 +1175,18 @@ async function saveBatch(){
       const fd=new FormData();
       fd.append('name',item.name);fd.append('category',item.cat);
       fd.append('description',item.desc||'');fd.append('author',item.author||'');fd.append('application',item.application||'');
-      fd.append('main_file',item.file);
-      if(item.atts.extra) fd.append('extra_file',item.atts.extra);
-      if(item.atts.pdf)   fd.append('pdf_file',  item.atts.pdf);
-      if(item.atts.img)   fd.append('img_file',  item.atts.img);
-      await api('/api/reports',{method:'POST',body:fd});
+      if(item.isZip){
+        fd.append('bundle',item.file);
+        if(item.atts.pdf) fd.append('pdf_file', item.atts.pdf);
+        if(item.atts.img) fd.append('img_file', item.atts.img);
+        await api('/api/reports/zip',{method:'POST',body:fd});
+      } else {
+        fd.append('main_file',item.file);
+        if(item.atts.extra) fd.append('extra_file',item.atts.extra);
+        if(item.atts.pdf)   fd.append('pdf_file',  item.atts.pdf);
+        if(item.atts.img)   fd.append('img_file',  item.atts.img);
+        await api('/api/reports',{method:'POST',body:fd});
+      }
       ok++;
     }catch{errors++;}
   }
@@ -1259,6 +1333,7 @@ document.addEventListener('keydown',e=>{
 
 // ── HELPERS ───────────────────────────────────────────────
 function fIcon(type,name){
+  if(/\.zip$/i.test(name)) return '📦';
   if((type||'').includes('pdf')||/\.pdf$/i.test(name)) return '📋';
   if((type||'').includes('image')) return '🖼️';
   if(/\.xlsx?|\.csv/i.test(name)) return '📊';
