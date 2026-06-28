@@ -1,0 +1,50 @@
+# Processado por envsubst no start do container (imagem oficial nginx):
+# ${API_UPSTREAM} é substituído pela variável de ambiente. As variáveis $... do
+# nginx (ex.: $uri, $host) são preservadas.
+server {
+    listen 80;
+    server_name _;
+    charset utf-8;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Permite uploads através do proxy (alinhe com MAX_UPLOAD_MB do backend).
+    client_max_body_size 60m;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json;
+
+    # Healthcheck do próprio frontend (Docker/Coolify) — não passa pelo backend.
+    location = /health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
+    }
+
+    # Reverse-proxy para o backend → mesma origem (sem CORS).
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Repassa a identidade SSO injetada pelo proxy da plataforma WMI.
+        proxy_set_header X-Auth-Request-Email $http_x_auth_request_email;
+        proxy_set_header X-Auth-Request-User  $http_x_auth_request_user;
+        # Segredo compartilhado: prova ao backend que o request veio por aqui (não direto).
+        # Sobrescreve qualquer X-Internal-Proxy que o cliente tente injetar.
+        proxy_set_header X-Internal-Proxy "${INTERNAL_PROXY_SECRET}";
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+    }
+
+    location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache, must-revalidate";
+    }
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'" always;
+}

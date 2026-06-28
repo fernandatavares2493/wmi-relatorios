@@ -1,0 +1,10 @@
+# Segredos — nunca devem entrar na imagem
+.env
+.env.*
+!.env.example
+
+# Git / docs
+.git
+.gitignore
+Dockerfile
+*.md

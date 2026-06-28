@@ -339,9 +339,10 @@ textarea.finput{resize:vertical;min-height:72px}
         <div><div class="nav-logo-name">WMI Solutions</div><div class="nav-logo-sub">Repositório de Relatórios</div></div>
       </div>
       <div class="nav-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openCatModal()">⚙ Categorias</button>
-        <button class="btn btn-ghost btn-sm" onclick="openUpload('single')">+ Individual</button>
-        <button class="btn btn-primary btn-md" onclick="openUpload('batch')">⬆ Importar em Lote</button>
+        <span class="nav-user" id="nav-user" style="font-size:var(--font-size-xs);color:var(--color-gray-400)"></span>
+        <button class="btn btn-ghost btn-sm" data-admin onclick="openCatModal()">⚙ Categorias</button>
+        <button class="btn btn-ghost btn-sm" data-admin onclick="openUpload('single')">+ Individual</button>
+        <button class="btn btn-primary btn-md" data-admin onclick="openUpload('batch')">⬆ Importar em Lote</button>
       </div>
     </div>
   </div>
@@ -368,7 +369,7 @@ textarea.finput{resize:vertical;min-height:72px}
       <input type="text" id="search" placeholder="Buscar relatório..." oninput="debounceLoad()">
     </div>
     <div class="pills" id="pills">
-      <span class="pill active" onclick="setFilter('all',this)">Todos</span>
+      <span class="pill active" data-cat="all">Todos</span>
     </div>
     <div class="pills" id="app-pills" style="padding-top:var(--space-2);border-top:1px solid var(--glass-border);width:100%">
       <span style="font-size:var(--font-size-xs);color:var(--color-gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.08em;align-self:center">Aplicação:</span>
@@ -547,14 +548,18 @@ textarea.finput{resize:vertical;min-height:72px}
 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────
-// Em produção, troque pelo URL real do backend no Coolify
-const API = window.ENV_API_URL || 'http://localhost:8000';
+// Mesma origem: o nginx do frontend faz reverse-proxy de /api/ para o backend.
+const API = '';
 
 // ── STATE ──────────────────────────────────────────────────
 let cats = [];
 let curFilter = 'all';
 let curAppFilter = 'all';
 let editId = null;
+let ME = {email:null, is_admin:false};
+let reportsById = {};
+let curDetailReport = null;
+let curDetailFiles = [];
 // single upload picked files: {main, extra, pdf, img} → File objects
 let SP = {main:null, extra:null, pdf:null, img:null};
 // batch
@@ -579,6 +584,11 @@ function showApiError(msg) {
 }
 
 // ── VIEWER ────────────────────────────────────────────────
+function openViewerById(fileId) {
+  const f = curDetailFiles.find(x => x.id === fileId);
+  if (!f) return;
+  openViewer(API + f.view_url, f.original_name, f.role);
+}
 function openViewer(url, filename, role) {
   if (role === 'pdf') {
     // PDF: abre em nova aba — forma mais confiável em todos os navegadores
@@ -655,7 +665,7 @@ async function qcatSave() {
     document.querySelectorAll('.bq-cat').forEach(sel => {
       const prev = sel.value;
       sel.innerHTML = '<option value="">Selecione...</option>' +
-        cats.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+        cats.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
       sel.value = prev;
     });
     // Select the new cat in the target select
@@ -683,6 +693,8 @@ document.addEventListener('click', e => {
 
 // ── BOOT ───────────────────────────────────────────────────
 async function boot() {
+  try { ME = await api('/api/me'); } catch(e) { ME = {email:null, is_admin:false}; }
+  applyAdminUI();
   try {
     cats = await api('/api/categories');
     renderPills();
@@ -694,9 +706,14 @@ async function boot() {
     document.getElementById('grid').innerHTML = `<div class="empty">
       <span class="empty-icon">⚠️</span>
       <h3>API indisponível</h3>
-      <p style="font-size:var(--font-size-sm)">Verifique se o backend está rodando em ${API}</p>
+      <p style="font-size:var(--font-size-sm)">Não foi possível carregar os relatórios.</p>
     </div>`;
   }
+}
+function applyAdminUI() {
+  const u = document.getElementById('nav-user');
+  if (u) u.textContent = ME.email ? (ME.email + (ME.is_admin ? ' · admin' : '')) : '';
+  document.querySelectorAll('[data-admin]').forEach(el => { el.style.display = ME.is_admin ? '' : 'none'; });
 }
 
 // ── REPORTS ────────────────────────────────────────────────
@@ -726,25 +743,28 @@ function renderGrid(reports) {
       <p style="font-size:var(--font-size-sm)">Publique um relatório para começar.</p></div>`;
     return;
   }
+  reportsById = {};
+  reports.forEach(r => { reportsById[r.id] = r; });
   grid.innerHTML = reports.map(r => {
     const cc = catColor(r.category);
     const dt = new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     const prev = r.preview_id
-      ? `<img src="${API}/api/files/view/${r.preview_id}" alt="preview">`
-      : `<div class="rcard-ph"><div class="rcard-ph-icon">📊</div><span class="rcard-ph-label">${r.category}</span></div>`;
+      ? `<img src="/api/files/view/${r.preview_id}" alt="preview">`
+      : `<div class="rcard-ph"><div class="rcard-ph-icon">📊</div><span class="rcard-ph-label">${esc(r.category)}</span></div>`;
+    const adminBtns = ME.is_admin ? `
+          <div class="rcard-btns">
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editReport('${r.id}')">✏️</button>
+            <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();delReport('${r.id}')">🗑</button>
+          </div>` : '';
     return `<div class="rcard" onclick="openDetail('${r.id}')">
       <div class="rcard-preview">${prev}<div class="rcard-overlay"></div>
-        <span class="rcard-cat" data-cc="${cc}">${r.category}</span></div>
+        <span class="rcard-cat" data-cc="${esc(cc)}">${esc(r.category)}</span></div>
       <div class="rcard-body">
         <div class="rcard-title">${esc(r.name)}</div>
         ${r.description?`<div class="rcard-desc">${esc(r.description)}</div>`:''}
-        ${r.application?`<div style="margin-bottom:var(--space-2)"><span class="app-badge">⚙ ${r.application}</span></div>`:''}
+        ${r.application?`<div style="margin-bottom:var(--space-2)"><span class="app-badge">⚙ ${esc(r.application)}</span></div>`:''}
         <div class="rcard-foot">
-          <div class="rcard-meta">📅 ${dt} · 📎 ${r.file_count} arquivo${r.file_count!=1?'s':''}</div>
-          <div class="rcard-btns">
-            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();editReport('${r.id}')">✏️</button>
-            <button class="btn btn-danger btn-xs" onclick="event.stopPropagation();delReport('${r.id}','${esc(r.name)}')">🗑</button>
-          </div>
+          <div class="rcard-meta">📅 ${dt} · 📎 ${r.file_count} arquivo${r.file_count!=1?'s':''}</div>${adminBtns}
         </div>
       </div></div>`;
   }).join('');
@@ -754,18 +774,25 @@ function renderGrid(reports) {
 async function openDetail(id) {
   try {
     const r = await api(`/api/reports/${id}`);
+    curDetailReport = r;
+    curDetailFiles = r.files || [];
     const cc = catColor(r.category);
     const dt = new Date(r.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
     const imgFile = r.files.find(f=>f.role==='img');
     const roles = {main:'Arquivo RTM',extra:'Arquivo LAB',pdf:'Simulação PDF',img:'Print da Tela de Filtro'};
     document.getElementById('d-title').textContent = r.name;
+    const adminActions = ME.is_admin ? `
+      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
+        <button class="btn btn-ghost btn-md" onclick="editReport('${r.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-md" onclick="delReport('${r.id}')">🗑 Excluir</button>
+      </div>` : '';
     document.getElementById('d-body').innerHTML = `
-      ${imgFile?`<div class="dpreview"><img src="${API+imgFile.view_url}" onerror="this.parentElement.style.display='none'"></div>`:''}
+      ${imgFile?`<div class="dpreview"><img src="/api/files/view/${imgFile.id}" onerror="this.parentElement.style.display='none'"></div>`:''}
       ${r.description?`<div class="sec-label">Descrição</div><div class="desc-box">${esc(r.description)}</div>`:''}
       <div class="dgrid">
-        <div class="di"><label>Categoria</label><p data-cc="${cc}">${r.category}</p></div>
-        <div class="di"><label>Responsável</label><p>${r.author||'—'}</p></div>
-      <div class="di"><label>Aplicação</label><p>${r.application?`<span class="app-badge">⚙ ${r.application}</span>`:'—'}</p></div>
+        <div class="di"><label>Categoria</label><p data-cc="${esc(cc)}">${esc(r.category)}</p></div>
+        <div class="di"><label>Responsável</label><p>${esc(r.author)||'—'}</p></div>
+      <div class="di"><label>Aplicação</label><p>${r.application?`<span class="app-badge">⚙ ${esc(r.application)}</span>`:'—'}</p></div>
         <div class="di"><label>Publicado em</label><p>${dt}</p></div>
         <div class="di"><label>Arquivos</label><p>${r.files.length}</p></div>
       </div>
@@ -774,25 +801,24 @@ async function openDetail(id) {
         <div class="dfile">
           <span class="dfile-icon">${fIcon(f.mime_type,f.original_name)}</span>
           <div class="dfile-info">
-            <div class="dfile-label">${roles[f.role]||f.role}</div>
-            <div class="dfile-name">${f.original_name} · ${fmtBytes(f.size_bytes)}</div>
+            <div class="dfile-label">${esc(roles[f.role]||f.role)}</div>
+            <div class="dfile-name">${esc(f.original_name)} · ${fmtBytes(f.size_bytes)}</div>
           </div>
           <div style="display:flex;gap:var(--space-2)">
-            ${(f.role==='pdf'||f.role==='img')?`<button class="btn btn-ghost btn-sm" onclick="openViewer('${API+f.view_url}','${f.original_name}','${f.role}')">👁 Ver</button>`:''}
-            <a href="${f.download_url}" download="${f.original_name}" class="btn btn-secondary btn-sm">⬇ Baixar</a>
+            ${(f.role==='pdf'||f.role==='img')?`<button class="btn btn-ghost btn-sm" onclick="openViewerById(${f.id})">👁 Ver</button>`:''}
+            <a href="${API}${f.download_url}" class="btn btn-secondary btn-sm">⬇ Baixar</a>
           </div>
         </div>`).join('')}
       </div>
-      <div style="display:flex;gap:var(--space-3);margin-top:var(--space-6)">
-        <button class="btn btn-ghost btn-md" onclick="editReport('${r.id}')">✏️ Editar</button>
-        <button class="btn btn-danger btn-md" onclick="delReport('${r.id}','${esc(r.name)}')">🗑 Excluir</button>
-      </div>`;
+      ${adminActions}`;
     openOv('ov-detail');
   } catch(e) { showApiError('Erro ao carregar detalhes.'); }
 }
 
 // ── DELETE ────────────────────────────────────────────────
-async function delReport(id, name) {
+async function delReport(id) {
+  const r = reportsById[id] || curDetailReport;
+  const name = (r && r.name) ? r.name : 'este relatório';
   if (!confirm(`Excluir "${name}"? Esta ação não pode ser desfeita.`)) return;
   try {
     await api(`/api/reports/${id}`, {method:'DELETE'});
@@ -843,7 +869,7 @@ function setSlot(key, file) {
   const sl=document.getElementById('slot-'+key); if(!sl) return;
   sl.classList.add('filled');
   sl.querySelector('.file-slot-icon').textContent=fIcon(file.type,file.name);
-  sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${trunc(file.name,28)}</strong>${fmtBytes(file.size)}`;
+  sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${esc(trunc(file.name,28))}</strong>${fmtBytes(file.size)}`;
   if(!sl.querySelector('.file-slot-clear')){
     const btn=document.createElement('button'); btn.className='file-slot-clear'; btn.textContent='✕';
     btn.onclick=e=>{e.stopPropagation();clearSlot(key);}; sl.appendChild(btn);
@@ -913,7 +939,7 @@ async function editReport(id) {
       const sl=document.getElementById('slot-'+f.role); if(!sl) return;
       sl.classList.add('filled');
       sl.querySelector('.file-slot-icon').textContent=fIcon(f.mime_type,f.original_name);
-      sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${trunc(f.original_name,24)}</strong>atual`;
+      sl.querySelector('.file-slot-label').innerHTML=`<strong style="color:var(--color-success)">${esc(trunc(f.original_name,24))}</strong>atual`;
     });
     document.getElementById('upload-title').textContent='Editar Relatório';
     document.getElementById('btn-single-save').textContent='✓ Salvar Alterações';
@@ -944,9 +970,9 @@ function renderQueue() {
       <div class="fqi-summary" onclick="toggleFqi('${item.id}')">
         <span class="fqi-icon">${fIcon(item.file.type,item.file.name)}</span>
         <div class="fqi-info">
-          <div class="fqi-name">${item.file.name}</div>
+          <div class="fqi-name">${esc(item.file.name)}</div>
           <div class="fqi-sub">${fmtBytes(item.file.size)} · ${item.classified?
-            `<span style="color:var(--color-success)">${item.name} — ${item.cat}</span>`:
+            `<span style="color:var(--color-success)">${esc(item.name)} — ${esc(item.cat)}</span>`:
             '<span style="color:var(--color-warning)">Aguardando classificação</span>'}</div>
         </div>
         <span class="fqi-badge ${item.classified?'done':'pending'}">${item.classified?'✓ Pronto':'Pendente'}</span>
@@ -966,7 +992,7 @@ function renderQueue() {
                 <div class="sel-wrap">
                   <select class="finput bq-cat" id="bq-cat-${item.id}" data-id="${item.id}" onchange="bField('${item.id}','cat',this.value)">
                     <option value="">Selecione...</option>
-                    ${cats.map(c=>`<option value="${c.name}" ${item.cat===c.name?'selected':''}>${c.name}</option>`).join('')}
+                    ${cats.map(c=>`<option value="${esc(c.name)}" ${item.cat===c.name?'selected':''}>${esc(c.name)}</option>`).join('')}
                   </select>
                 </div>
                 <button class="btn-add-cat" title="Criar nova categoria" onclick="qcatOpen(this,'bq-cat-${item.id}')">＋</button>
@@ -1013,7 +1039,7 @@ function attSlot(itemId,key,icon,label,existing) {
     <input type="file" accept="*"
       onchange="bAtt('${itemId}','${key}',this)">
     <span class="att-slot-icon">${filled?fIcon(existing.type,existing.name):icon}</span>
-    <span class="att-slot-lbl">${filled?trunc(existing.name,16):label}</span>
+    <span class="att-slot-lbl">${filled?esc(trunc(existing.name,16)):label}</span>
     ${filled?`<button class="att-clear" onclick="event.stopPropagation();clearAtt('${itemId}','${key}')">✕</button>`:''}
   </div>`;
 }
@@ -1053,7 +1079,7 @@ function markDone(id){
   toggleFqi(id,false); updateBP();
   // update sub text
   const sub=row?.querySelector('.fqi-sub');
-  if(sub) sub.innerHTML=`${fmtBytes(item.file.size)} · <span style="color:var(--color-success)">${item.name} — ${item.cat}</span>`;
+  if(sub) sub.innerHTML=`${fmtBytes(item.file.size)} · <span style="color:var(--color-success)">${esc(item.name)} — ${esc(item.cat)}</span>`;
   const badge=row?.querySelector('.fqi-badge');
   if(badge){badge.className='fqi-badge done';badge.textContent='✓ Pronto';}
 }
@@ -1105,15 +1131,15 @@ function bReset(){
 function catColor(name){const i=cats.findIndex(c=>c.name===name)%CC.length;return CC[i<0?0:i];}
 function renderPills(){
   const w=document.getElementById('pills');
-  w.innerHTML=`<span class="pill ${curFilter==='all'?'active':''}" onclick="setFilter('all',this)">Todos</span>`;
-  cats.forEach(c=>w.innerHTML+=`<span class="pill ${curFilter===c.name?'active':''}" data-cc="${catColor(c.name)}" onclick="setFilter('${c.name}',this)">${c.name}</span>`);
+  w.innerHTML=`<span class="pill ${curFilter==='all'?'active':''}" data-cat="all">Todos</span>`;
+  cats.forEach(c=>w.innerHTML+=`<span class="pill ${curFilter===c.name?'active':''}" data-cc="${esc(catColor(c.name))}" data-cat="${esc(c.name)}">${esc(c.name)}</span>`);
 }
 function fillCatSelects(){
   ['s-cat'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const prev=el.value;
     el.innerHTML='<option value="">Selecione...</option>';
-    cats.forEach(c=>el.innerHTML+=`<option value="${c.name}">${c.name}</option>`);
+    cats.forEach(c=>el.innerHTML+=`<option value="${esc(c.name)}">${esc(c.name)}</option>`);
     el.value=prev;
   });
 }
@@ -1137,30 +1163,33 @@ async function openCatModal(){
     all.forEach(r => { usage[r.category] = (usage[r.category]||0) + 1; });
   } catch(e) {}
 
+  const canEdit = ME.is_admin;
   document.getElementById('cat-list').innerHTML = cats.map((c,i) => {
     const count = usage[c.name] || 0;
     const canRemove = count === 0;
-    return `<div class="cat-mgmt-item" id="catitem-${i}">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4)">
-        <span data-cc="${CC[i%CC.length]}" style="font-weight:600">${c.name}</span>
-        <div class="cat-item-actions">
-          ${count > 0 ? `<span class="cat-in-use-tip">📊 ${count} relatório${count>1?'s':''}</span>` : ''}
+    const usageTip = count > 0 ? `<span class="cat-in-use-tip">📊 ${count} relatório${count>1?'s':''}</span>` : '';
+    const actions = canEdit ? `
+          ${usageTip}
           <button class="btn btn-secondary btn-xs" onclick="toggleCatEdit(${i})">✏️ Editar</button>
           <button class="btn btn-danger btn-xs ${canRemove?'':'btn-disabled'}"
-            ${canRemove?`onclick="rmCat('${c.name}')"`:``}
+            ${canRemove?`onclick="rmCatByIndex(${i})"`:``}
             title="${canRemove?'Remover categoria':'Possui relatórios vinculados — remova-os primeiro'}">
             🗑
-          </button>
-        </div>
-      </div>
+          </button>` : usageTip;
+    const editRow = canEdit ? `
       <div class="cat-edit-row" id="catedit-${i}">
-        <input type="text" class="finput" id="catinput-${i}" value="${c.name}"
+        <input type="text" class="finput" id="catinput-${i}" value="${esc(c.name)}"
           style="flex:1;padding:var(--space-2) var(--space-3);font-size:var(--font-size-sm)"
           oninput="this.value=this.value.toUpperCase()"
-          onkeydown="if(event.key==='Enter')saveCatEdit(${i},'${c.name}');if(event.key==='Escape')toggleCatEdit(${i})">
-        <button class="btn btn-primary btn-sm" onclick="saveCatEdit(${i},'${c.name}')">✓ Salvar</button>
+          onkeydown="if(event.key==='Enter')saveCatEdit(${i});if(event.key==='Escape')toggleCatEdit(${i})">
+        <button class="btn btn-primary btn-sm" onclick="saveCatEdit(${i})">✓ Salvar</button>
         <button class="btn btn-ghost btn-sm" onclick="toggleCatEdit(${i})">Cancelar</button>
-      </div>
+      </div>` : '';
+    return `<div class="cat-mgmt-item" id="catitem-${i}">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4)">
+        <span data-cc="${CC[i%CC.length]}" style="font-weight:600">${esc(c.name)}</span>
+        <div class="cat-item-actions">${actions}</div>
+      </div>${editRow}
     </div>`;
   }).join('');
   openOv('ov-cat');
@@ -1178,7 +1207,8 @@ function toggleCatEdit(i) {
   }
 }
 
-async function saveCatEdit(i, oldName) {
+async function saveCatEdit(i) {
+  const oldName = cats[i] ? cats[i].name : '';
   const newName = document.getElementById(`catinput-${i}`).value.trim().toUpperCase();
   if (!newName) { toast('Informe um nome','err'); return; }
   if (newName === oldName) { toggleCatEdit(i); return; }
@@ -1206,7 +1236,9 @@ async function addCat(){
     renderPills();fillCatSelects();openCatModal();toast(`Categoria "${v}" adicionada`,'ok');
   }catch(e){showApiError(e.message);}
 }
-async function rmCat(name){
+async function rmCatByIndex(i){
+  const name = cats[i] ? cats[i].name : '';
+  if(!name) return;
   if(!confirm(`Remover "${name}"?`))return;
   try{
     await api(`/api/categories/${encodeURIComponent(name)}`,{method:'DELETE'});
@@ -1237,7 +1269,7 @@ function fIcon(type,name){
   return '📁';
 }
 function fmtBytes(b){if(!b)return '';if(b<1024)return b+'B';if(b<1048576)return (b/1024).toFixed(1)+'KB';return (b/1048576).toFixed(1)+'MB';}
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function esc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;')}
 function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s}
 let toastTmr;
 function toast(msg,type='ok'){
@@ -1246,6 +1278,13 @@ function toast(msg,type='ok'){
   el.className=`toast ${type} show`;
   clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),3500);
 }
+
+// Filtro por categoria (delegação — evita interpolar nomes em handlers inline)
+document.getElementById('pills').addEventListener('click', e => {
+  const p = e.target.closest('.pill');
+  if (!p || p.dataset.cat === undefined) return;
+  setFilter(p.dataset.cat, p);
+});
 
 boot();
 </script>

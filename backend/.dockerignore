@@ -1,0 +1,14 @@
+# Segredos — nunca devem entrar na imagem
+.env
+.env.*
+!.env.example
+
+# Git / docs / build
+.git
+.gitignore
+Dockerfile
+*.md
+__pycache__/
+*.py[cod]
+.venv/
+venv/

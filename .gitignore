@@ -1,0 +1,25 @@
+# Secrets / variáveis de ambiente — NUNCA commitar
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Node (caso surja tooling de frontend)
+node_modules/
+
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Material de referência WMI — NÃO versionar (contém credencial real em senha-suporte.md)
+Resources Claude@WMI*/
+*.rar
