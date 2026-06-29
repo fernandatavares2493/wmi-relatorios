@@ -1,0 +1,97 @@
+# ============================================================
+# Portal de Relatórios WMI — variante para DEPLOY no Coolify
+# (build pack "Docker Compose"). Use este arquivo no campo
+# "Docker Compose Location": /docker-compose.coolify.yml
+#
+# Diferenças vs docker-compose.yml (uso local):
+#  - SEM `ports:` nos serviços internos → postgres/minio/backend NÃO ficam
+#    expostos na internet. Eles conversam entre si pela rede interna do Coolify
+#    (por nome de serviço: postgres, minio, backend).
+#  - SEM `container_name` → o Coolify nomeia os containers.
+#  - Só o `frontend` é público, via domínio (SERVICE_FQDN_FRONTEND).
+#  - Os valores ${...} são preenchidos na aba "Environment Variables" do Coolify.
+# ============================================================
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    mem_limit: 512m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER:     ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    mem_limit: 512m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL:          postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MINIO_URL:             http://minio:9000
+      MINIO_ACCESS_KEY:      ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY:      ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET:          relatorios
+      FRONTEND_URL:          ${FRONTEND_URL}
+      APP_ENV:               ${APP_ENV:-production}
+      ADMIN_EMAILS:          ${ADMIN_EMAILS}
+      MAX_UPLOAD_MB:         ${MAX_UPLOAD_MB:-50}
+      INTERNAL_PROXY_SECRET: ${INTERNAL_PROXY_SECRET}
+    mem_limit: 512m
+    cpus: 0.5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # Marca ESTE serviço como o público. O Coolify gera o domínio (edite no
+      # campo "Domains" do serviço frontend para http://relatorios.apps.wmi.solutions).
+      SERVICE_FQDN_FRONTEND: "/"
+      API_UPSTREAM:          http://backend:8000
+      INTERNAL_PROXY_SECRET: ${INTERNAL_PROXY_SECRET}
+    mem_limit: 128m
+    cpus: 0.25
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  minio_data:
