@@ -43,10 +43,12 @@ services:
     mem_limit: 512m
     cpus: 0.5
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      # 'curl' foi removido da imagem minio/minio (nov/2023). Usa o cliente 'mc',
+      # incluído na própria imagem, que verifica a prontidão do servidor local.
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -59,7 +61,7 @@ services:
       MINIO_BUCKET:          relatorios
       FRONTEND_URL:          ${FRONTEND_URL}
       APP_ENV:               ${APP_ENV:-production}
-      ADMIN_EMAILS:          ${ADMIN_EMAILS}
+      ADMIN_EMAILS:          ${ADMIN_EMAILS:-fernandaferreira@wmi.solutions}
       MAX_UPLOAD_MB:         ${MAX_UPLOAD_MB:-50}
       INTERNAL_PROXY_SECRET: ${INTERNAL_PROXY_SECRET}
     mem_limit: 512m

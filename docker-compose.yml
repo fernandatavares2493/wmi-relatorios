@@ -44,10 +44,12 @@ services:
     mem_limit: 512m
     cpus: 0.5
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      # 'curl' foi removido da imagem minio/minio (nov/2023). Usa o cliente 'mc',
+      # incluído na própria imagem, que verifica a prontidão do servidor local.
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── Backend (FastAPI) ────────────────────────────────────
   backend:
